@@ -1,4 +1,6 @@
-# `kubectl-split`: split Kubernetes resources into multiple files
+# `kubectl-split`: split Kubernetes YAMLs into files
+
+![Tests passing](https://img.shields.io/github/workflow/status/patrickdappollonio/kubectl-split/Testing/master?logo=github&style=flat-square) [![Releasing](https://img.shields.io/github/downloads/patrickdappollonio/kubectl-split/latest/total?label=Downloads&style=social)](https://github.com/patrickdappollonio/kubectl-split/releases)
 
 `kubectl-split` is a neat tool that allows you to split a single multi-YAML Kubernetes manifest into multiple subfiles using a naming convention you choose. This is done by parsing the YAML code and giving you the option to access any key from the YAML object using Go Templates.
 

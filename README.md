@@ -479,4 +479,4 @@ Pull requests are welcomed! So far, looking for help with the following items, w
 * Improving the YAML file-by-file parser, right now it works by buffering line by line
 * Adding support to install through `brew` or `krew`, for `kubectl`
 * Functions to allow accessing labels and annotations on a way different than the dot-notation from Go templates
-* Allowing only a subset of resources to be split out, for example, extract only `Deployment` and `Service` type YAMLs
+* Allowing only a subset of resources to be included or excluded, for example, extract only `Deployment` and `Service` type YAMLs (or extract all resources but not `Deployment` and `Service`)

@@ -44,7 +44,7 @@ func (s *Split) processSingleYAML(contents []byte, position int, template *templ
 	name = strings.NewReplacer("<no value>", "", "\n", "").Replace(name)
 
 	if s := strings.TrimSuffix(name, filepath.Ext(name)); s == "" {
-		return "", fmt.Errorf("file name rendered will yield no file name")
+		return "", fmt.Errorf("file name rendered will yield no file name for YAML file number %d", position)
 	}
 
 	return name, nil

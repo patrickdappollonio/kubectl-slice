@@ -54,31 +54,15 @@ Examples:
 kubectl-split -f foo.yaml -o ./ -i Pod,Namespace
 
 Flags:
-<<<<<<< HEAD
       --dry-run                if true, no files are created, but the potentially generated files will be printed as the command output
   -e, --exclude-kind strings   kinds to exclude in the output (singular, case insensitive); if empty, all Kubernetes object kinds are excluded
   -h, --help                   help for kubectl-split
   -i, --include-kind strings   kinds to include in the output (singular, case insensitive); if empty, all Kubernetes object kinds are included
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
   -o, --output-dir string      the output directory used to output the splitted files (default ".")
+  -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
   -t, --template string        go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
   -v, --version                version for kubectl-split
-||||||| 5c17299
-      --dry-run             if true, no files are created, but the potentially generated files will be printed as the command output
-  -h, --help                help for kubectl-split
-  -f, --input-file string   the input file used to read the initial macro YAML file. If empty or "-", stdin is used
-  -o, --output-dir string   the output directory used to output the splitted files (default ".")
-  -t, --template string     go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
-  -v, --version             version for kubectl-split
-=======
-      --dry-run             if true, no files are created, but the potentially generated files will be printed as the command output
-  -h, --help                help for kubectl-split
-  -f, --input-file string   the input file used to read the initial macro YAML file. If empty or "-", stdin is used
-  -o, --output-dir string   the output directory used to output the splitted files (default ".")
-  -s, --skip-non-k8s        if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
-  -t, --template string     go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
-  -v, --version             version for kubectl-split
->>>>>>> master
 ```
 
 ### Flags
@@ -97,20 +81,16 @@ Flags:
     * If multiple files from your YAML generate the same file name, all YAMLs that match this file name will be appended.
     * If the rendered file name includes a path separator, subfolders under `--output-dir` will be created.
     * If a file already exists in `--output-directory` under this generated file name, their contents will be replaced.
-<<<<<<< HEAD
 * `--exclude-kind`:
   * A case-insensitive, comma-separated list of Kubernetes object kinds to exclude from the output.
   * You can also repeat the parameter multiple times to achieve the same effect (`--exclude-kind pod --exclude-kind deployment`)
 * `--include-kind`:
   * A case-insensitive, comma-separated list of Kubernetes object kinds to include in the output. Any other Kubernetes object kinds will be excluded.
   * You can also repeat the parameter multiple times to achieve the same effect (`--include-kind pod --include-kind deployment`)
-||||||| 5c17299
-=======
 * `--skip-non-k8s`:
   * If enabled, any YAMLs that don't contain at least an `apiVersion`, `kind` and `metadata.name` will be excluded from the split
   * There are no attempts to validate how correct these fields are. For example, there's no check to validate that `apiVersion` exists in a Kubernetes cluster, or whether this `apiVersion` is valid: `"example\foo"`.
     * It's useful, however, if alongside the original YAML you suspect there might be some non Kubernetes YAMLs being generated.
->>>>>>> master
 
 ## Why `kubectl-split`?
 

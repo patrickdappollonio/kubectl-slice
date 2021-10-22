@@ -10,14 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type ErrKindSkip struct {
-	Kind string
-}
-
-func (e *ErrKindSkip) Error() string {
-	return fmt.Sprintf("file skipped by kind %q", e.Kind)
-}
-
 // processSingleYAML parses a single YAML file as received by contents. It also renders the
 // template needed to generate its name
 func (s *Split) processSingleYAML(contents []byte, position int, template *template.Template) (string, error) {
@@ -30,6 +22,20 @@ func (s *Split) processSingleYAML(contents []byte, position int, template *templ
 		return "", fmt.Errorf("unable to parse YAML file number %d: %w", position, err)
 	}
 
+	// Render the name to a buffer using the Go Template
+	s.log.Println("Rendering filename template from Go Template")
+	var buf bytes.Buffer
+	if err := template.Execute(&buf, manifest); err != nil {
+		return "", fmt.Errorf("unable to render file name for YAML file number %d: %w", position, improveExecError(err))
+	}
+
+	// Check if file contains at least some Kubernetes keys
+	if s.opts.StrictKubernetes {
+		if err := checkKubernetesBasics(manifest); err != nil {
+			return "", err
+		}
+	}
+
 	// We need to check if the file is skipped by kind
 	if hasIncluded, hasExcluded := len(s.opts.IncludedKinds) > 0, len(s.opts.ExcludedKinds) > 0; hasIncluded || hasExcluded {
 		// Retrieve the kind from the YAML code
@@ -40,20 +46,13 @@ func (s *Split) processSingleYAML(contents []byte, position int, template *templ
 
 		// If we're working with including only, then filter by it
 		if hasIncluded && !inSliceIgnoreCase(s.opts.IncludedKinds, kind) {
-			return "", &ErrKindSkip{Kind: kind}
+			return "", &kindSkipErr{Kind: kind}
 		}
 
 		// Otherwise exclude based on the parameter received
 		if hasExcluded && inSliceIgnoreCase(s.opts.ExcludedKinds, kind) {
-			return "", &ErrKindSkip{Kind: kind}
+			return "", &kindSkipErr{Kind: kind}
 		}
-	}
-
-	// Render the name to a buffer using the Go Template
-	s.log.Println("Rendering filename template from Go Template")
-	var buf bytes.Buffer
-	if err := template.Execute(&buf, manifest); err != nil {
-		return "", fmt.Errorf("unable to render file name for YAML file number %d: %w", position, improveExecError(err))
 	}
 
 	// Trim the file name
@@ -63,7 +62,7 @@ func (s *Split) processSingleYAML(contents []byte, position int, template *templ
 	name = strings.NewReplacer("<no value>", "", "\n", "").Replace(name)
 
 	if s := strings.TrimSuffix(name, filepath.Ext(name)); s == "" {
-		return "", fmt.Errorf("file name rendered will yield no file name")
+		return "", fmt.Errorf("file name rendered will yield no file name for YAML file number %d", position)
 	}
 
 	return name, nil
@@ -96,4 +95,38 @@ func inSliceIgnoreCase(s []string, e string) bool {
 	}
 
 	return false
+}
+
+func checkStringInMap(local map[string]interface{}, key, keyprefix string) error {
+	iface, found := local[key]
+
+	if !found {
+		return &strictModeErr{keyprefix + key}
+	}
+
+	if _, ok := iface.(string); !ok {
+		return &strictModeErr{keyprefix + key}
+	}
+
+	return nil
+}
+
+func checkKubernetesBasics(manifest map[string]interface{}) error {
+	if err := checkStringInMap(manifest, "apiVersion", ""); err != nil {
+		return err
+	}
+
+	if err := checkStringInMap(manifest, "kind", ""); err != nil {
+		return err
+	}
+
+	if metadata, found := manifest["metadata"]; !found {
+		return &strictModeErr{"metadata"}
+	} else {
+		if err := checkStringInMap(metadata.(map[string]interface{}), "name", "metadata."); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

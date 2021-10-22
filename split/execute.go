@@ -62,13 +62,20 @@ func (s *Split) Execute() error {
 		// Send it for processing
 		name, err := s.processSingleYAML(currentFile, fileCount, s.template)
 		if err != nil {
-			if skip, ok := err.(*ErrKindSkip); ok {
-				s.log.Printf("Skipping file %d due to kind %q", fileCount, skip.Kind)
+			switch err.(type) {
+			case *kindSkipErr:
+				s.log.Printf("Skipping file %d: %s", fileCount, err.Error())
 				fileCount++
 				return nil
-			}
 
-			return err
+			case *strictModeErr:
+				s.log.Printf("Skipping file %d: %s", fileCount, err.Error())
+				fileCount++
+				return nil
+
+			default:
+				return err
+			}
 		}
 
 		// See if we have a file with the custom name

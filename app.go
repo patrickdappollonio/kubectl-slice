@@ -52,6 +52,8 @@ func root() *cobra.Command {
 	rootCommand.Flags().BoolVar(&opts.DebugMode, "debug", false, "enable debug mode")
 	rootCommand.Flags().StringSliceVarP(&opts.IncludedKinds, "include-kind", "i", nil, "kinds to include in the output (singular, case insensitive); if empty, all Kubernetes object kinds are included")
 	rootCommand.Flags().StringSliceVarP(&opts.ExcludedKinds, "exclude-kind", "e", nil, "kinds to exclude in the output (singular, case insensitive); if empty, all Kubernetes object kinds are excluded")
+	rootCommand.Flags().BoolVarP(&opts.StrictKubernetes, "skip-non-k8s", "s", false, "if enabled, any YAMLs that don't contain at least an \"apiVersion\", \"kind\" and \"metadata.name\" will be excluded from the split")
+
 	rootCommand.Flags().MarkHidden("debug")
 
 	return rootCommand

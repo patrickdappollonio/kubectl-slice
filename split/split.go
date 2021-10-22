@@ -43,6 +43,8 @@ type Options struct {
 	GoTemplate      string // the go template code to render the file names
 	DryRun          bool   // if true, no files are created
 	DebugMode       bool   // enables debug mode
-	IncludedKinds   []string
-	ExcludedKinds   []string
+
+	IncludedKinds    []string
+	ExcludedKinds    []string
+	StrictKubernetes bool // if true, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded
 }

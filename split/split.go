@@ -42,7 +42,9 @@ type Options struct {
 	OutputDirectory string // the path to the directory where the files will be stored
 	GoTemplate      string // the go template code to render the file names
 	DryRun          bool   // if true, no files are created
-	DebugMode       bool
+	DebugMode       bool   // enables debug mode
 
+	IncludedKinds    []string
+	ExcludedKinds    []string
 	StrictKubernetes bool // if true, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded
 }

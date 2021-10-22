@@ -37,6 +37,13 @@ func (s *Split) processSingleYAML(contents []byte, position int, template *templ
 		return "", fmt.Errorf("unable to render file name for YAML file number %d: %w", position, improveExecError(err))
 	}
 
+	// Check if file contains at least some Kubernetes keys
+	if s.opts.StrictKubernetes {
+		if err := checkKubernetesBasics(manifest, position); err != nil {
+			return "", err
+		}
+	}
+
 	// Trim the file name
 	name := strings.TrimSpace(buf.String())
 
@@ -48,6 +55,40 @@ func (s *Split) processSingleYAML(contents []byte, position int, template *templ
 	}
 
 	return name, nil
+}
+
+func checkStringInMap(local map[string]interface{}, key, keyprefix string, fileNumber int) error {
+	iface, found := local[key]
+
+	if !found {
+		return &strictModeErr{fileNumber, keyprefix + key}
+	}
+
+	if _, ok := iface.(string); !ok {
+		return &strictModeErr{fileNumber, keyprefix + key}
+	}
+
+	return nil
+}
+
+func checkKubernetesBasics(manifest map[string]interface{}, fileNumber int) error {
+	if err := checkStringInMap(manifest, "apiVersion", "", fileNumber); err != nil {
+		return err
+	}
+
+	if err := checkStringInMap(manifest, "kind", "", fileNumber); err != nil {
+		return err
+	}
+
+	if metadata, found := manifest["metadata"]; !found {
+		return &strictModeErr{fileNumber, "metadata"}
+	} else {
+		if err := checkStringInMap(metadata.(map[string]interface{}), "name", "metadata.", fileNumber); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Execute runs the process according to the split.Options provided. This will
@@ -98,6 +139,12 @@ func (s *Split) Execute() error {
 		// Send it for processing
 		name, err := s.processSingleYAML(currentFile, fileCount, s.template)
 		if err != nil {
+			if _, ok := err.(*strictModeErr); ok {
+				s.log.Printf("Skipping file: %s", err.Error())
+				fileCount++
+				return nil
+			}
+
 			return err
 		}
 

@@ -55,6 +55,7 @@ Flags:
   -h, --help                help for kubectl-split
   -f, --input-file string   the input file used to read the initial macro YAML file. If empty or "-", stdin is used
   -o, --output-dir string   the output directory used to output the splitted files (default ".")
+  -s, --skip-non-k8s        if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
   -t, --template string     go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
   -v, --version             version for kubectl-split
 ```
@@ -75,6 +76,10 @@ Flags:
     * If multiple files from your YAML generate the same file name, all YAMLs that match this file name will be appended.
     * If the rendered file name includes a path separator, subfolders under `--output-dir` will be created.
     * If a file already exists in `--output-directory` under this generated file name, their contents will be replaced.
+* `--skip-non-k8s`:
+  * If enabled, any YAMLs that don't contain at least an `apiVersion`, `kind` and `metadata.name` will be excluded from the split
+  * There are no attempts to validate how correct these fields are. For example, there's no check to validate that `apiVersion` exists in a Kubernetes cluster, or whether this `apiVersion` is valid: `"example\foo"`.
+    * It's useful, however, if alongside the original YAML you suspect there might be some non Kubernetes YAMLs being generated.
 
 ## Why `kubectl-split`?
 

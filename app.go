@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/patrickdappollonio/kubectl-split/split"
@@ -27,7 +28,10 @@ func root() *cobra.Command {
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		Example:       `kubectl-split -f foo.yaml -o ./ -i Pod,Namespace`,
 		RunE: func(_ *cobra.Command, args []string) error {
+			log.Printf("Included: %#v -- Excluded: %#v", opts.IncludedKinds, opts.ExcludedKinds)
+
 			// If no input file has been provided or it's "-", then
 			// point the app to stdin
 			if opts.InputFile == "" || opts.InputFile == "-" {
@@ -44,11 +48,13 @@ func root() *cobra.Command {
 		},
 	}
 
-	rootCommand.Flags().StringVarP(&opts.InputFile, "input-file", "f", "", "the input file used to read the initial macro YAML file. If empty or \"-\", stdin is used")
+	rootCommand.Flags().StringVarP(&opts.InputFile, "input-file", "f", "", "the input file used to read the initial macro YAML file; if empty or \"-\", stdin is used")
 	rootCommand.Flags().StringVarP(&opts.OutputDirectory, "output-dir", "o", ".", "the output directory used to output the splitted files")
 	rootCommand.Flags().StringVarP(&opts.GoTemplate, "template", "t", "{{.kind | lower}}-{{.metadata.name}}.yaml", "go template used to generate the file name when creating the resource files in the output directory")
 	rootCommand.Flags().BoolVar(&opts.DryRun, "dry-run", false, "if true, no files are created, but the potentially generated files will be printed as the command output")
 	rootCommand.Flags().BoolVar(&opts.DebugMode, "debug", false, "enable debug mode")
+	rootCommand.Flags().StringSliceVarP(&opts.IncludedKinds, "included-kinds", "i", nil, "kinds to include in the output (singular, case insensitive); if empty, all Kubernetes object kinds are included")
+	rootCommand.Flags().StringSliceVarP(&opts.ExcludedKinds, "excluded-kinds", "e", nil, "kinds to exclude in the output (singular, case insensitive); if empty, all Kubernetes object kinds are excluded")
 	rootCommand.Flags().MarkHidden("debug")
 
 	return rootCommand

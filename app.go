@@ -49,6 +49,8 @@ func root() *cobra.Command {
 	rootCommand.Flags().StringVarP(&opts.GoTemplate, "template", "t", "{{.kind | lower}}-{{.metadata.name}}.yaml", "go template used to generate the file name when creating the resource files in the output directory")
 	rootCommand.Flags().BoolVar(&opts.DryRun, "dry-run", false, "if true, no files are created, but the potentially generated files will be printed as the command output")
 	rootCommand.Flags().BoolVar(&opts.DebugMode, "debug", false, "enable debug mode")
+	rootCommand.Flags().BoolVarP(&opts.StrictKubernetes, "skip-non-k8s", "s", false, "if enabled, any YAMLs that don't contain at least an \"apiVersion\", \"kind\" and \"metadata.name\" will be excluded from the split")
+
 	rootCommand.Flags().MarkHidden("debug")
 
 	return rootCommand

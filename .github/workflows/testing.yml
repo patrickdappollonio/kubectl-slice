@@ -5,6 +5,7 @@ on:
 
 jobs:
   test-app:
+    name: Test Application
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository

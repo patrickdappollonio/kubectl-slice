@@ -4,30 +4,30 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/patrickdappollonio/kubectl-split/split"
+	"github.com/patrickdappollonio/kubectl-slice/slice"
 	"github.com/spf13/cobra"
 )
 
 var version = "development"
 
 const (
-	helpShort = "kubectl-split allows you to split a YAML into multiple subfiles using a pattern."
+	helpShort = "kubectl-slice allows you to split a YAML into multiple subfiles using a pattern."
 
-	helpLong = `kubectl-split allows you to split a YAML into multiple subfiles using a pattern.
-For documentation, available functions, and more, visit: https://github.com/patrickdappollonio/kubectl-split.`
+	helpLong = `kubectl-slice allows you to split a YAML into multiple subfiles using a pattern.
+For documentation, available functions, and more, visit: https://github.com/patrickdappollonio/kubectl-slice.`
 )
 
 func root() *cobra.Command {
-	opts := split.Options{}
+	opts := slice.Options{}
 
 	rootCommand := &cobra.Command{
-		Use:           "kubectl-split",
+		Use:           "kubectl-slice",
 		Short:         helpShort,
 		Long:          helpLong,
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Example:       `kubectl-split -f foo.yaml -o ./ -i Pod,Namespace`,
+		Example:       `kubectl-slice -f foo.yaml -o ./ -i Pod,Namespace`,
 		RunE: func(_ *cobra.Command, args []string) error {
 			// If no input file has been provided or it's "-", then
 			// point the app to stdin
@@ -36,7 +36,7 @@ func root() *cobra.Command {
 			}
 
 			// Create a new instance. This will also perform a basic validation.
-			instance, err := split.New(opts)
+			instance, err := slice.New(opts)
 			if err != nil {
 				return fmt.Errorf("validation failed: %w", err)
 			}

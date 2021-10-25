@@ -1,10 +1,10 @@
-# `kubectl-split`: split Kubernetes YAMLs into files
+# `kubectl-slice`: split Kubernetes YAMLs into files
 
-![Tests passing](https://img.shields.io/github/workflow/status/patrickdappollonio/kubectl-split/Testing/master?logo=github&style=flat-square) [![Releasing](https://img.shields.io/github/downloads/patrickdappollonio/kubectl-split/latest/total?label=Downloads&style=social)](https://github.com/patrickdappollonio/kubectl-split/releases)
+![Tests passing](https://img.shields.io/github/workflow/status/patrickdappollonio/kubectl-slice/Testing/master?logo=github&style=flat-square) [![Releasing](https://img.shields.io/github/downloads/patrickdappollonio/kubectl-slice/latest/total?label=Downloads&style=social)](https://github.com/patrickdappollonio/kubectl-slice/releases)
 
-`kubectl-split` is a neat tool that allows you to split a single multi-YAML Kubernetes manifest into multiple subfiles using a naming convention you choose. This is done by parsing the YAML code and giving you the option to access any key from the YAML object [using Go Templates](https://pkg.go.dev/text/template).
+`kubectl-slice` is a neat tool that allows you to split a single multi-YAML Kubernetes manifest into multiple subfiles using a naming convention you choose. This is done by parsing the YAML code and giving you the option to access any key from the YAML object [using Go Templates](https://pkg.go.dev/text/template).
 
-By default, `kubectl-split` will split your files into multiple subfiles following this naming convention:
+By default, `kubectl-slice` will split your files into multiple subfiles following this naming convention:
 
 ```handlebars
 {{.kind | lower}}-{{.metadata.name}}.yaml
@@ -33,7 +33,7 @@ metadata:
 Then the following files will be created:
 
 ```text
-$ kubectl-split --input-file=example.yaml
+$ kubectl-slice --input-file=example.yaml
 Wrote pod-nginx-ingress.yaml -- 57 bytes.
 Wrote namespace-production.yaml -- 60 bytes.
 2 files generated.
@@ -41,28 +41,32 @@ Wrote namespace-production.yaml -- 60 bytes.
 
 You can customize the file name to your liking, by using the `--template` flag.
 
+## Installation
+
+Download the latest release for your platform from the [Releases page](https://github.com/patrickdappollonio/kubectl-slice/releases), then extract and move the `kubectl-slice` binary to any place in your `$PATH`. If you have `kubectl` installed, you can use both `kubectl-slice` and `kubectl split` (note in the later the absence of the `-`).
+
 ## Usage
 
 ```text
-kubectl-split allows you to split a YAML into multiple subfiles using a pattern.
-For documentation, available functions, and more, visit: https://github.com/patrickdappollonio/kubectl-split.
+kubectl-slice allows you to split a YAML into multiple subfiles using a pattern.
+For documentation, available functions, and more, visit: https://github.com/patrickdappollonio/kubectl-slice.
 
 Usage:
-  kubectl-split [flags]
+  kubectl-slice [flags]
 
 Examples:
-kubectl-split -f foo.yaml -o ./ -i Pod,Namespace
+kubectl-slice -f foo.yaml -o ./ -i Pod,Namespace
 
 Flags:
       --dry-run                if true, no files are created, but the potentially generated files will be printed as the command output
   -e, --exclude-kind strings   kinds to exclude in the output (singular, case insensitive); if empty, all Kubernetes object kinds are excluded
-  -h, --help                   help for kubectl-split
+  -h, --help                   help for kubectl-slice
   -i, --include-kind strings   kinds to include in the output (singular, case insensitive); if empty, all Kubernetes object kinds are included
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
   -o, --output-dir string      the output directory used to output the splitted files (default ".")
   -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
   -t, --template string        go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
-  -v, --version                version for kubectl-split
+  -v, --version                version for kubectl-slice
 ```
 
 ### Flags
@@ -92,7 +96,7 @@ Flags:
   * There are no attempts to validate how correct these fields are. For example, there's no check to validate that `apiVersion` exists in a Kubernetes cluster, or whether this `apiVersion` is valid: `"example\foo"`.
     * It's useful, however, if alongside the original YAML you suspect there might be some non Kubernetes YAMLs being generated.
 
-## Why `kubectl-split`?
+## Why `kubectl-slice`?
 
 Multiple services and applications to do GitOps require you to provide a folder similar to this:
 
@@ -115,33 +119,33 @@ Multiple services and applications to do GitOps require you to provide a folder 
 
 Where resources that are globally scoped live in the `cluster/` folder -- or the folder designated by the service or application -- and namespace-specific resources live inside `namespaces/$NAME/`.
 
-Performing this task on big installations such as applications coming from Helm is a bit daunting, and a manual task. `kubectl-split` can help by allowing you to read a single YAML file which holds multiple YAML manifests, parse each one of them, allow you to use their fields as parameters to generate custom names, then rendering those into individual files in a specific folder.
+Performing this task on big installations such as applications coming from Helm is a bit daunting, and a manual task. `kubectl-slice` can help by allowing you to read a single YAML file which holds multiple YAML manifests, parse each one of them, allow you to use their fields as parameters to generate custom names, then rendering those into individual files in a specific folder.
 
 ### Differences with other tools
 
 #### Losing the original file and its format
 
-There are other plugins and apps out there that can split your YAML into multiple sub-YAML files like `kubectl-split`, however, they do it by decoding the YAML, processing it, then re-encode it again, which will lose its original definition. That means that some array pieces, for example, might be encoded to a different output -- while still keeping them as arrays; comments are also lost -- since the decoding to Go, then re-encoding back to YAML will ignore YAML Comments.
+There are other plugins and apps out there that can split your YAML into multiple sub-YAML files like `kubectl-slice`, however, they do it by decoding the YAML, processing it, then re-encode it again, which will lose its original definition. That means that some array pieces, for example, might be encoded to a different output -- while still keeping them as arrays; comments are also lost -- since the decoding to Go, then re-encoding back to YAML will ignore YAML Comments.
 
-`kubectl-split` will keep the original file, and even when it will still parse it into Go to give you the ability to use any of the fields as part of the template for the name, the original file contents are still preserved with no changes, so your comments and the preference on how you render arrays, for example, will remain exactly the same as the original file.
+`kubectl-slice` will keep the original file, and even when it will still parse it into Go to give you the ability to use any of the fields as part of the template for the name, the original file contents are still preserved with no changes, so your comments and the preference on how you render arrays, for example, will remain exactly the same as the original file.
 
 #### Naming format and access to data within YAML
 
-One of the things you can do too with `kubectl-split` that you might not be able to do with other tools is the fact that with `kubectl-split` you can literally access any field from the YAML file. Now, granted, if for example you decide to use an annotation in your YAML as part of the name template, that annotation may exist in _some_ of the YAMLs but perhaps not in all of them, so you have to account for that by providing a [`default`](#default) or using Go Template's `if else` blocks.
+One of the things you can do too with `kubectl-slice` that you might not be able to do with other tools is the fact that with `kubectl-slice` you can literally access any field from the YAML file. Now, granted, if for example you decide to use an annotation in your YAML as part of the name template, that annotation may exist in _some_ of the YAMLs but perhaps not in all of them, so you have to account for that by providing a [`default`](#default) or using Go Template's `if else` blocks.
 
-Other apps might not allow you to read into the entire YAML, and even more so, they might enforce a convention on some of the fields you are able to access. Resource names, for example, [should follow a Kubernetes standard](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names) which some apps might edit preemptively since they don't make for good or "nice" file names, and as such, replace all dots for underscores. `kubectl-split` will let you provide a template that might render an invalid file name, that's true, but you have [a plethora of functions](#replace) to modify its behavior yourself to something that fits your design better. Perhaps you prefer dashes rather than underscores, and you can do that.
+Other apps might not allow you to read into the entire YAML, and even more so, they might enforce a convention on some of the fields you are able to access. Resource names, for example, [should follow a Kubernetes standard](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names) which some apps might edit preemptively since they don't make for good or "nice" file names, and as such, replace all dots for underscores. `kubectl-slice` will let you provide a template that might render an invalid file name, that's true, but you have [a plethora of functions](#replace) to modify its behavior yourself to something that fits your design better. Perhaps you prefer dashes rather than underscores, and you can do that.
 
 Upcoming versions will improve this even more by allowing annotation access using positions rather than names, for example.
 
 ## `kubectl` plugin
 
-Since the application name is `kubectl-split`, adding it to any folder in your `$PATH` will allow you to run it either via its real command name, `kubectl-split`, or as a `kubectl` plugin: `kubectl split`.
+Since the application name is `kubectl-slice`, adding it to any folder in your `$PATH` will allow you to run it either via its real command name, `kubectl-slice`, or as a `kubectl` plugin: `kubectl split`.
 
-`kubectl-split` does not use any configuration from `kubectl`, and it can be used standalone, even without a `$KUBECONFIG`.
+`kubectl-slice` does not use any configuration from `kubectl`, and it can be used standalone, even without a `$KUBECONFIG`.
 
 ## Resources with no namespace
 
-It's very common that Helm charts or even plain YAMLs found online might not contain the namespace, and because of that, the field isn't available in the YAML. Since this tool was created to fit a specific criteria [as seen above](#why-kubectl-split), there's no need to implement this here. However, you can use `kustomize` to quickly add the namespace to your manifest, then run it through `kubectl-split`.
+It's very common that Helm charts or even plain YAMLs found online might not contain the namespace, and because of that, the field isn't available in the YAML. Since this tool was created to fit a specific criteria [as seen above](#why-kubectl-slice), there's no need to implement this here. However, you can use `kustomize` to quickly add the namespace to your manifest, then run it through `kubectl-slice`.
 
 First, create a `kustomization.yaml` file:
 
@@ -159,10 +163,10 @@ Replace `my-namespace` for the namespace you want to set, and `my-file.yaml` for
 kustomize build
 ```
 
-This will render your new file, namespaces included, to `stdout`. You can pipe this as-is to `kubectl-split`:
+This will render your new file, namespaces included, to `stdout`. You can pipe this as-is to `kubectl-slice`:
 
 ```
-kustomize build | kubectl-split
+kustomize build | kubectl-slice
 ```
 
 Keep in mind that is recommended to **not add namespaces** to your YAML resources, to allow users to install in any destination they choose. For example, a namespaceless file called `foo.yaml` can be installed to the namespace `bar` by using:
@@ -175,7 +179,7 @@ kubectl apply -n bar -f foo.yaml
 
 Any field from the YAML file can be used, however, non-existent fields will render an empty string. This is very common for situations such as rendering a Helm template [where the namespace shouldn't be defined](#resources-with-no-namespace).
 
-If you would rather fail executing `kubectl-split` if a field was not found, consider using the `required` Go Template function. The following template will make `kubectl-split` fail with a non-zero exit code if the namespace of any of the resources is not defined.
+If you would rather fail executing `kubectl-slice` if a field was not found, consider using the `required` Go Template function. The following template will make `kubectl-slice` fail with a non-zero exit code if the namespace of any of the resources is not defined.
 
 ```handlebars
 {{.metadata.namespace | required}}.yaml
@@ -191,7 +195,7 @@ This will render any resource without a namespace with the name `global.yaml`.
 
 ## Conflicting file names
 
-Since it's possible to provide a Go Template for a file name that might be the same for multiple resources, `kubectl-split` will append any YAML that matches by file name to the given file using the `---` separator.
+Since it's possible to provide a Go Template for a file name that might be the same for multiple resources, `kubectl-slice` will append any YAML that matches by file name to the given file using the `---` separator.
 
 For example, considering the following file name:
 
@@ -203,11 +207,11 @@ Any cluster-scoped resource will be appended into `global.yaml`, while any resou
 
 ## Windows `CRLF`
 
-`kubectl-split` does not support Windows line breaks with `CRLF` -- also known as `\r\n`. Consider using Unix line breaks `\n`.
+`kubectl-slice` does not support Windows line breaks with `CRLF` -- also known as `\r\n`. Consider using Unix line breaks `\n`.
 
 ## String conversion
 
-Since `kubectl-split` is built in Go, there's only a handful of primitives that can be read from the YAML manifest. All of these have been hand-picked to be stringified automatically -- in fact, multiple template functions will accept them, and yes, that means you can `lowercase` a number 😅
+Since `kubectl-slice` is built in Go, there's only a handful of primitives that can be read from the YAML manifest. All of these have been hand-picked to be stringified automatically -- in fact, multiple template functions will accept them, and yes, that means you can `lowercase` a number 😅
 
 The decision is intentional and it's due to the fact that's impossible to map any potential Kubernetes resource, given the fact that you can teach Kubernetes new objects using Custom Resource Definitions. Because of that, resources are read as untyped and converted to strings when possible.
 
@@ -371,7 +375,7 @@ Particularly useful for Kubernetes FQDNs needed to be used as filenames.
 
 ## Example split for Tekton
 
-Tekton Pipelines is a powerful tool that's available through a Helm Chart from the [cd.foundation](https://cd.foundation). We can grab it from their Helm repository and render it locally, then use `kubectl-split` to split it into multiple files.
+Tekton Pipelines is a powerful tool that's available through a Helm Chart from the [cd.foundation](https://cd.foundation). We can grab it from their Helm repository and render it locally, then use `kubectl-slice` to split it into multiple files.
 
 We'll use the following filename template so there's one folder for each Kubernetes resource `kind`, so all `Secrets` for example are in the same folder, then we will use the resource name as defined in `metadata.name`. We'll also modify the name, since some of the Tekton resources have an FQDN for a name, like `tekton.pipelines.dev`, with the `dottodash` template function:
 
@@ -385,10 +389,10 @@ We will render the Helm Chart locally to `stdout` with:
 helm template tekton cdf/tekton-pipeline
 ```
 
-Then we can pipe that output directly to `kubectl-split`:
+Then we can pipe that output directly to `kubectl-slice`:
 
 ```bash
-helm template tekton cdf/tekton-pipeline | kubectl-split --template '{{.kind|lower}}/{{.metadata.name|dottodash}}.yaml'
+helm template tekton cdf/tekton-pipeline | kubectl-slice --template '{{.kind|lower}}/{{.metadata.name|dottodash}}.yaml'
 ```
 
 Which will render the following output:

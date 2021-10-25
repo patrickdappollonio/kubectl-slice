@@ -1,4 +1,4 @@
-package split
+package slice
 
 import (
 	"bufio"

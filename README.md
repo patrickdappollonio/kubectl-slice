@@ -1,6 +1,7 @@
 # `kubectl-slice`: split Kubernetes YAMLs into files
 
-![Tests passing](https://img.shields.io/github/workflow/status/patrickdappollonio/kubectl-slice/Testing/master?logo=github&style=flat-square) [![Releasing](https://img.shields.io/github/downloads/patrickdappollonio/kubectl-slice/latest/total?label=Downloads&style=social)](https://github.com/patrickdappollonio/kubectl-slice/releases)
+[![Tests passing](https://img.shields.io/github/workflow/status/patrickdappollonio/kubectl-slice/Testing/master?logo=github&style=flat-square)](https://github.com/patrickdappollonio/kubectl-slice/actions)
+[![Downloads](https://img.shields.io/github/downloads/patrickdappollonio/kubectl-slice/total?color=blue&logo=github&style=flat-square)](https://github.com/patrickdappollonio/kubectl-slice/releases)
 
 `kubectl-slice` is a neat tool that allows you to split a single multi-YAML Kubernetes manifest into multiple subfiles using a naming convention you choose. This is done by parsing the YAML code and giving you the option to access any key from the YAML object [using Go Templates](https://pkg.go.dev/text/template).
 

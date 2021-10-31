@@ -70,6 +70,8 @@ func (s *Split) fnProcessFile(file []byte) error {
 }
 
 func (s *Split) scan() error {
+	s.fileCount = 0
+
 	// Since we'll be iterating over files that potentially might end up being
 	// duplicated files, we need to store them somewhere to, later, save them
 	// to files
@@ -85,8 +87,12 @@ func (s *Split) scan() error {
 	// Create a local buffer to read files line by line
 	local := bytes.Buffer{}
 
-	// Handle the processing of a single YAML and add it to the list of
-	// found files for later handling
+	// Parse a single file
+	parseFile := func() error {
+		contents := local.Bytes()
+		local = bytes.Buffer{}
+		return s.fnProcessFile(contents)
+	}
 
 	// Iterate over the entire buffer
 	for {
@@ -98,14 +104,9 @@ func (s *Split) scan() error {
 			// If we reached the end of file, handle up to this point
 			if err == io.EOF {
 				s.log.Println("Reached end of file while parsing. Sending remaining buffer to process.")
-
-				contents := local.Bytes()
-				local = bytes.Buffer{}
-
-				if err := s.fnProcessFile(contents); err != nil {
+				if err := parseFile(); err != nil {
 					return err
 				}
-
 				break
 			}
 
@@ -116,13 +117,9 @@ func (s *Split) scan() error {
 		// Check if we're at the end of the file
 		if line == "---\n" {
 			s.log.Println("Found the end of a file. Sending buffer to process.")
-			contents := local.Bytes()
-			local = bytes.Buffer{}
-
-			if err := s.fnProcessFile(contents); err != nil {
+			if err := parseFile(); err != nil {
 				return err
 			}
-
 			continue
 		}
 

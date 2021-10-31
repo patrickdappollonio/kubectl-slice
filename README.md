@@ -54,6 +54,8 @@ You can customize the file name to your liking, by using the `--template` flag.
 
 ## Installation
 
+`kubectl-slice` can be used as a standalone tool or through `kubectl`, as a plugin.
+
 ### Using `krew`
 
 `kubectl-slice` is available as a [krew plugin](https://krew.sigs.k8s.io/docs/user-guide/installing-plugins/).

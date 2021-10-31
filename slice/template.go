@@ -72,7 +72,26 @@ func templateFuncs() template.FuncMap {
 		"alphanumdash": jsonAlphanumdash,
 		"dottodash":    jsonDotToDash,
 		"dottounder":   jsonDotToUnder,
+		"index":        mapValueByIndex,
 	}
+}
+
+// mapValueByIndex returns the value of the map at the given index
+func mapValueByIndex(index string, m map[string]interface{}) (interface{}, error) {
+	if m == nil {
+		return nil, fmt.Errorf("map is nil")
+	}
+
+	if index == "" {
+		return nil, fmt.Errorf("index is empty")
+	}
+
+	v, ok := m[index]
+	if !ok {
+		return nil, fmt.Errorf("map does not contain index %q", index)
+	}
+
+	return v, nil
 }
 
 // strJSON converts a value received from JSON/YAML to string. Since not all data

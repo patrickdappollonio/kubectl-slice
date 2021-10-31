@@ -15,6 +15,7 @@
   - [`replace`](#replace)
   - [`alphanumify`, `alphanumdash`](#alphanumify-alphanumdash)
   - [`dottodash`, `dottounder`](#dottodash-dottounder)
+  - [`index`](#index)
 
 The following template functions are available, with some functions having aliases for convenience:
 
@@ -165,3 +166,30 @@ secrets-foo_dev
 ```
 
 Particularly useful for Kubernetes FQDNs needed to be used as filenames.
+
+## `index`
+
+For certain resources where YAML indexes are not alphanumeric, but contain special characters such as labels or annotations, `index` allows you to retrieve those resources. Consider the following YAML:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+  labels:
+    app.kubernetes.io/name: patrickdap-deployment
+```
+
+It's not possible to access the value `patrickdap-deployment` using dot notation like this: `{{ .metadata.labels.app.kubernetes.io/name }}`: the Go Template engine will throw an error. Instead, you can use `index`:
+
+```handlebars
+{{ index "app.kubernetes.io/name" .metadata.labels }}
+patrickdap-deployment
+```
+
+The reason the parameters are flipped is to allow piping one output to another:
+
+```handlebars
+{{ .metadata.labels | index "app.kubernetes.io/name" }}
+patrickdap-deployment
+```

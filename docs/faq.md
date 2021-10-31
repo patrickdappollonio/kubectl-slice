@@ -8,6 +8,7 @@
   - [Two files will generate the same file name, what do I do?](#two-files-will-generate-the-same-file-name-what-do-i-do)
   - [This app doesn't seem to work with Windows `CRLF`](#this-app-doesnt-seem-to-work-with-windows-crlf)
   - [How are string conversions handled?](#how-are-string-conversions-handled)
+  - [I keep getting `file name template parse failed: bad character`, how do I fix it?](#i-keep-getting-file-name-template-parse-failed-bad-character-how-do-i-fix-it)
 
 ## I want to exclude or include certain Kubernetes resource types, how do I do it?
 
@@ -112,3 +113,13 @@ The following YAML untyped values are handled, [in accordance with the `json.Unm
 * `bool`, for JSON booleans
 * `float64`, for JSON numbers
 * `string`, for JSON strings
+
+## I keep getting `file name template parse failed: bad character`, how do I fix it?
+
+If you're receiving this error, chances are you're attempting to access a field from the YAML whose name is not limited to alphanumeric characters, such as annotations or labels, like `app.kubernetes.io/name`.
+
+To fix it, use the [`index` function](docs/functions.md#index) to access the field by index. For example, if you want to access the `app.kubernetes.io/name` field, you can use the following template:
+
+```handlebars
+{{ index "app.kubernetes.io/name" .metadata.labels }}
+```

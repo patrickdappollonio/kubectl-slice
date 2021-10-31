@@ -149,6 +149,7 @@ func jsonDotToDash(val interface{}) (string, error) {
 
 	return strings.ReplaceAll(s, ".", "-"), nil
 }
+
 func jsonDotToUnder(val interface{}) (string, error) {
 	s, err := strJSON(val)
 	if err != nil {
@@ -182,7 +183,7 @@ func jsonRequired(val interface{}) (interface{}, error) {
 	}
 
 	if s == "" {
-		return nil, fmt.Errorf("argument is marked as required, but it renders to empty")
+		return nil, fmt.Errorf("argument is marked as required, but it renders to empty or it's an object or an unsupported type")
 	}
 
 	return val, nil

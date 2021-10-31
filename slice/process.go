@@ -120,12 +120,14 @@ func checkKubernetesBasics(manifest map[string]interface{}) error {
 		return err
 	}
 
-	if metadata, found := manifest["metadata"]; !found {
+	metadata, found := manifest["metadata"]
+
+	if !found {
 		return &strictModeErr{"metadata"}
-	} else {
-		if err := checkStringInMap(metadata.(map[string]interface{}), "name", "metadata."); err != nil {
-			return err
-		}
+	}
+
+	if err := checkStringInMap(metadata.(map[string]interface{}), "name", "metadata."); err != nil {
+		return err
 	}
 
 	return nil

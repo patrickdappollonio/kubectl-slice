@@ -38,7 +38,7 @@ By default, `kubectl-slice` will also slice out commented YAML file sections. If
 
 ## How to add namespaces to YAML resources with no namespace?
 
-It's very common that Helm charts or even plain YAMLs found online might not contain the namespace, and because of that, the field isn't available in the YAML. Since this tool was created to fit a specific criteria [as seen above](README.md#why-kubectl-slice), there's no need to implement this here. However, you can use `kustomize` to quickly add the namespace to your manifest, then run it through `kubectl-slice`.
+It's very common that Helm charts or even plain YAMLs found online might not contain the namespace, and because of that, the field isn't available in the YAML. Since this tool was created to fit a specific criteria [as seen above](../README.md#why-kubectl-slice), there's no need to implement this here. However, you can use `kustomize` to quickly add the namespace to your manifest, then run it through `kubectl-slice`.
 
 First, create a `kustomization.yaml` file:
 
@@ -118,7 +118,7 @@ The following YAML untyped values are handled, [in accordance with the `json.Unm
 
 If you're receiving this error, chances are you're attempting to access a field from the YAML whose name is not limited to alphanumeric characters, such as annotations or labels, like `app.kubernetes.io/name`.
 
-To fix it, use the [`index` function](docs/functions.md#index) to access the field by index. For example, if you want to access the `app.kubernetes.io/name` field, you can use the following template:
+To fix it, use the [`index` function](functions.md#index) to access the field by index. For example, if you want to access the `app.kubernetes.io/name` field, you can use the following template:
 
 ```handlebars
 {{ index "app.kubernetes.io/name" .metadata.labels }}

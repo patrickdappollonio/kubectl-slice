@@ -14,13 +14,66 @@ const (
 	defaultChmod = 0664
 )
 
-// Execute runs the process according to the split.Options provided. This will
-// generate the files in the given directory.
-func (s *Split) Execute() error {
+func (s *Split) fnProcessFile(file []byte) error {
+	s.log.Printf("Found a new YAML file in buffer, number %d", s.fileCount)
+
+	// If there's no data in the buffer, return without doing anything
+	// but count the file
+	if len(file) == 0 {
+		// If it is the first file, it means the original file started
+		// with "---", which is valid YAML, but we don't count it
+		// as a file.
+		if s.fileCount == 1 {
+			s.log.Println("Got empty file. Skipping.")
+			return nil
+		}
+
+		s.fileCount++
+		return nil
+	}
+
+	// Send it for processing
+	name, err := s.processSingleYAML(file, s.fileCount, s.template)
+	if err != nil {
+		switch err.(type) {
+		case *kindSkipErr:
+			s.log.Printf("Skipping file %d: %s", s.fileCount, err.Error())
+			s.fileCount++
+			return nil
+
+		case *strictModeErr:
+			s.log.Printf("Skipping file %d: %s", s.fileCount, err.Error())
+			s.fileCount++
+			return nil
+
+		default:
+			return err
+		}
+	}
+
+	// See if we have a file with the custom name
+	buf, found := s.filesFound[name]
+
+	// If not, add it. If so, we append it
+	if !found {
+		s.log.Printf("Got nonexistent file. Adding it to the list: %s", name)
+		s.filesFound[name] = *bytes.NewBuffer(file)
+	} else {
+		s.log.Printf("Got existent file. Appending to original buffer: %s", name)
+		fmt.Fprintln(&buf, "---")
+		fmt.Fprintln(&buf, string(file))
+		s.filesFound[name] = buf
+	}
+
+	s.fileCount++
+	return nil
+}
+
+func (s *Split) scan() error {
 	// Since we'll be iterating over files that potentially might end up being
 	// duplicated files, we need to store them somewhere to, later, save them
 	// to files
-	allFiles := make(map[string]bytes.Buffer)
+	s.filesFound = make(map[string]bytes.Buffer)
 
 	// We can totally create a single decoder then decode using that, however,
 	// we want to maintain 1:1 exactly the same declaration as the YAML originally
@@ -30,71 +83,10 @@ func (s *Split) Execute() error {
 	scanner := bufio.NewReader(s.data)
 
 	// Create a local buffer to read files line by line
-	local := new(bytes.Buffer)
-
-	// Holder for file count
-	fileCount := 1
+	local := bytes.Buffer{}
 
 	// Handle the processing of a single YAML and add it to the list of
 	// found files for later handling
-	fnProcessFile := func() error {
-		s.log.Printf("Found a new YAML file in buffer, number %d", fileCount)
-
-		// Grab local copy of the full file
-		currentFile := local.Bytes()
-		local = new(bytes.Buffer)
-
-		// If there's no data in the buffer, return without doing anything
-		// but count the file
-		if len(currentFile) == 0 {
-			// If it is the first file, it means the original file started
-			// with "---", which is valid YAML, but we don't count it
-			// as a file.
-			if fileCount == 1 {
-				s.log.Println("Got empty file. Skipping.")
-				return nil
-			}
-
-			fileCount++
-			return nil
-		}
-
-		// Send it for processing
-		name, err := s.processSingleYAML(currentFile, fileCount, s.template)
-		if err != nil {
-			switch err.(type) {
-			case *kindSkipErr:
-				s.log.Printf("Skipping file %d: %s", fileCount, err.Error())
-				fileCount++
-				return nil
-
-			case *strictModeErr:
-				s.log.Printf("Skipping file %d: %s", fileCount, err.Error())
-				fileCount++
-				return nil
-
-			default:
-				return err
-			}
-		}
-
-		// See if we have a file with the custom name
-		buf, found := allFiles[name]
-
-		// If not, add it. If so, we append it
-		if !found {
-			s.log.Printf("Got nonexistent file. Adding it to the list: %s", name)
-			allFiles[name] = *bytes.NewBuffer(currentFile)
-		} else {
-			s.log.Printf("Got existent file. Appending to original buffer: %s", name)
-			fmt.Fprintln(&buf, "---")
-			fmt.Fprintln(&buf, string(currentFile))
-			allFiles[name] = buf
-		}
-
-		fileCount++
-		return nil
-	}
 
 	// Iterate over the entire buffer
 	for {
@@ -106,7 +98,11 @@ func (s *Split) Execute() error {
 			// If we reached the end of file, handle up to this point
 			if err == io.EOF {
 				s.log.Println("Reached end of file while parsing. Sending remaining buffer to process.")
-				if err := fnProcessFile(); err != nil {
+
+				contents := local.Bytes()
+				local = bytes.Buffer{}
+
+				if err := s.fnProcessFile(contents); err != nil {
 					return err
 				}
 
@@ -114,27 +110,34 @@ func (s *Split) Execute() error {
 			}
 
 			// Otherwise handle the unexpected error
-			return fmt.Errorf("unable to read YAML file number %d: %w", fileCount, err)
+			return fmt.Errorf("unable to read YAML file number %d: %w", s.fileCount, err)
 		}
 
 		// Check if we're at the end of the file
 		if line == "---\n" {
 			s.log.Println("Found the end of a file. Sending buffer to process.")
-			if err := fnProcessFile(); err != nil {
+			contents := local.Bytes()
+			local = bytes.Buffer{}
+
+			if err := s.fnProcessFile(contents); err != nil {
 				return err
 			}
 
 			continue
 		}
 
-		fmt.Fprint(local, line)
+		fmt.Fprint(&local, line)
 	}
 
 	s.log.Printf(
 		"Finished processing buffer. Generated %d individual files, and processed %d files in the original YAML.",
-		len(allFiles), fileCount,
+		len(s.filesFound), s.fileCount,
 	)
 
+	return nil
+}
+
+func (s *Split) store() error {
 	// Create the output folder if it doesn't exist
 	if !s.opts.DryRun {
 		s.log.Printf("Creating directory %q if it doesn't exist.", s.opts.OutputDirectory)
@@ -145,9 +148,9 @@ func (s *Split) Execute() error {
 
 	// Now save those files to disk (or if dry-run is on, print what it would
 	// save). Files will be overwritten.
-	fileCount = 0
-	for name, contents := range allFiles {
-		fileCount++
+	s.fileCount = 0
+	for name, contents := range s.filesFound {
+		s.fileCount++
 		fullpath := filepath.Join(s.opts.OutputDirectory, name)
 		fileLength := contents.Len()
 
@@ -190,11 +193,21 @@ func (s *Split) Execute() error {
 		fmt.Fprintf(os.Stdout, "Would write %s -- %d bytes.\n", fullpath, fileLength)
 	}
 
-	if fileCount == 1 {
-		fmt.Fprintf(os.Stdout, "%d file generated.\n", fileCount)
+	if s.fileCount == 1 {
+		fmt.Fprintf(os.Stdout, "%d file generated.\n", s.fileCount)
 	} else {
-		fmt.Fprintf(os.Stdout, "%d files generated.\n", fileCount)
+		fmt.Fprintf(os.Stdout, "%d files generated.\n", s.fileCount)
 	}
 
 	return nil
+}
+
+// Execute runs the process according to the split.Options provided. This will
+// generate the files in the given directory.
+func (s *Split) Execute() error {
+	if err := s.scan(); err != nil {
+		return err
+	}
+
+	return s.store()
 }

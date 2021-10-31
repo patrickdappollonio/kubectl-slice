@@ -16,6 +16,9 @@ type Split struct {
 	log      *log.Logger
 	template *template.Template
 	data     *bytes.Buffer
+
+	filesFound map[string]bytes.Buffer
+	fileCount  int
 }
 
 // New creates a new Split instance with the options set

@@ -14,11 +14,13 @@ const (
 	defaultChmod = 0664
 )
 
-func (s *Split) fnProcessFile(file []byte) error {
+func (s *Split) processSingleFile(file []byte) error {
 	s.log.Printf("Found a new YAML file in buffer, number %d", s.fileCount)
 
 	// If there's no data in the buffer, return without doing anything
 	// but count the file
+	file = bytes.TrimSpace(file)
+
 	if len(file) == 0 {
 		// If it is the first file, it means the original file started
 		// with "---", which is valid YAML, but we don't count it
@@ -32,8 +34,11 @@ func (s *Split) fnProcessFile(file []byte) error {
 		return nil
 	}
 
+	// Add an empty line at the end
+	file = append(file, []byte("\n\n")...)
+
 	// Send it for processing
-	name, err := s.processSingleYAML(file, s.fileCount, s.template)
+	name, err := s.parseYAMLManifest(file, s.fileCount, s.template)
 	if err != nil {
 		switch err.(type) {
 		case *kindSkipErr:
@@ -60,8 +65,9 @@ func (s *Split) fnProcessFile(file []byte) error {
 		s.filesFound[name] = *bytes.NewBuffer(file)
 	} else {
 		s.log.Printf("Got existent file. Appending to original buffer: %s", name)
-		fmt.Fprintln(&buf, "---")
-		fmt.Fprintln(&buf, string(file))
+		fmt.Fprint(&buf, "---")
+		fmt.Fprint(&buf, "\n\n")
+		fmt.Fprint(&buf, string(file))
 		s.filesFound[name] = buf
 	}
 
@@ -91,7 +97,7 @@ func (s *Split) scan() error {
 	parseFile := func() error {
 		contents := local.Bytes()
 		local = bytes.Buffer{}
-		return s.fnProcessFile(contents)
+		return s.processSingleFile(contents)
 	}
 
 	// Iterate over the entire buffer

@@ -10,9 +10,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// processSingleYAML parses a single YAML file as received by contents. It also renders the
+// parseYAMLManifest parses a single YAML file as received by contents. It also renders the
 // template needed to generate its name
-func (s *Split) processSingleYAML(contents []byte, position int, template *template.Template) (string, error) {
+func (s *Split) parseYAMLManifest(contents []byte, position int, template *template.Template) (string, error) {
 	// All resources we'll handle are Kubernetes manifest, and even those who are lists,
 	// they're still Kubernetes Objects of type List, so we can use a map
 	manifest := make(map[string]interface{})
@@ -85,11 +85,11 @@ func getKindFromYAML(manifest map[string]interface{}, fileNumber int) (string, e
 	return kind, nil
 }
 
-func inSliceIgnoreCase(s []string, e string) bool {
-	e = strings.ToLower(e)
+func inSliceIgnoreCase(slice []string, expected string) bool {
+	expected = strings.ToLower(expected)
 
-	for _, a := range s {
-		if strings.ToLower(a) == e {
+	for _, a := range slice {
+		if strings.ToLower(a) == expected {
 			return true
 		}
 	}

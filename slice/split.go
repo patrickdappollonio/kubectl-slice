@@ -8,6 +8,8 @@ import (
 	"text/template"
 )
 
+const DefaultTemplateName = "{{.kind | lower}}-{{.metadata.name}}.yaml"
+
 // Split is a Kubernetes Split instance. Each instance has its own template
 // used to generate the resource names when saving to disk. Because of this,
 // avoid reusing the same instance of Split

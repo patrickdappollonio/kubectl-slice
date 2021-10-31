@@ -15,35 +15,35 @@ spec:
         matchLabels:
           os: darwin
           arch: arm64
-      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ .TagName }}/kubectl-slice_{{ .TagName }}_darwin_arm64.tar.gz" .TagName }}
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_{{ slice .TagName 1 }}_darwin_arm64.tar.gz" .TagName | indent 6 }}
       bin: kubectl-slice
     - selector:
         matchLabels:
           os: darwin
           arch: amd64
-      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ .TagName }}/kubectl-slice_{{ .TagName }}_darwin_x86_64.tar.gz" .TagName }}
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_{{ slice .TagName 1 }}_darwin_x86_64.tar.gz" .TagName | indent 6 }}
       bin: kubectl-slice
     - selector:
         matchLabels:
           os: linux
           arch: arm64
-      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ .TagName }}/kubectl-slice_{{ .TagName }}_linux_arm64.tar.gz" .TagName }}
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_{{ slice .TagName 1 }}_linux_arm64.tar.gz" .TagName | indent 6 }}
       bin: kubectl-slice
     - selector:
         matchLabels:
           os: linux
           arch: arm
-      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ .TagName }}/kubectl-slice_{{ .TagName }}_linux_armv6.tar.gz" .TagName }}
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_{{ slice .TagName 1 }}_linux_armv6.tar.gz" .TagName | indent 6 }}
       bin: kubectl-slice
     - selector:
         matchLabels:
           os: linux
           arch: amd64
-      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ .TagName }}/kubectl-slice_{{ .TagName }}_linux_x86_64.tar.gz" .TagName }}
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_{{ slice .TagName 1 }}_linux_x86_64.tar.gz" .TagName | indent 6 }}
       bin: kubectl-slice
     - selector:
         matchLabels:
           os: windows
           arch: amd64
-        {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ .TagName }}/kubectl-slice_{{ .TagName }}_windows_x86_64.tar.gz" .TagName }}
-        bin: kubectl-slice.exe
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_{{ slice .TagName 1 }}_windows_x86_64.tar.gz" .TagName | indent 6 }}
+      bin: kubectl-slice.exe

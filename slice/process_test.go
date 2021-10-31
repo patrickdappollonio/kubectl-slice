@@ -174,6 +174,16 @@ func Test_checkKubernetesBasics(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "missing metadata fields",
+			args: args{
+				manifest: map[string]interface{}{
+					"kind":       "Deployment",
+					"apiVersion": "apps/v1",
+				},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

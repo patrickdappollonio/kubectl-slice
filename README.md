@@ -63,7 +63,7 @@ You can customize the file name to your liking, by using the `--template` flag.
 To install, use the following command:
 
 ```bash
-kubectl krew install kubectl-slice
+kubectl krew install slice
 ```
 
 ### Download and install manually

@@ -137,3 +137,4 @@ Pull requests are welcomed! So far, looking for help with the following items, w
 * Improving the YAML file-by-file parser, right now it works by buffering line by line
 * Adding support to install through `brew`
 * Functions to allow accessing labels and annotations on a way different than the dot-notation from Go templates
+* [Adding new features marked as `enhancement`](//github.com/patrickdappollonio/kubectl-slice/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)

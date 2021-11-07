@@ -185,39 +185,13 @@ func (s *Split) store() error {
 
 		default:
 			// do nothing, handling below
+			if err := writeToFile(fullpath, v.data); err != nil {
+				return err
+			}
+
+			fmt.Fprintf(os.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
+			continue
 		}
-
-		dir := filepath.Dir(fullpath)
-		s.log.Printf("Ensuring folder %q exists for current file.", dir)
-
-		// Since a single Go Template File Name might render different folder prefixes,
-		// we need to ensure they're all created.
-		if err := os.MkdirAll(dir, folderChmod); err != nil {
-			return fmt.Errorf("unable to create output folder for file %q: %w", fullpath, err)
-		}
-
-		// Open the file as read/write, create the file if it doesn't exist, and if
-		// it does, truncate it.
-		f, err := os.OpenFile(fullpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultChmod)
-		if err != nil {
-			return fmt.Errorf("unable to create/open file %q: %w", fullpath, err)
-		}
-
-		// Write the contents from the buffer
-		if _, err := f.Write(v.data); err != nil {
-			f.Close()
-			return fmt.Errorf("unable to write file contents for file %q: %w", fullpath, err)
-		}
-
-		// Attempt to close the file cleanly
-		if err := f.Close(); err != nil {
-			return fmt.Errorf("unable to close file after write for file %q: %w", fullpath, err)
-		}
-
-		fmt.Fprintf(os.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
-
-		// Go to the next file
-		continue
 	}
 
 	switch {
@@ -250,4 +224,32 @@ func (s *Split) Execute() error {
 	s.sort()
 
 	return s.store()
+}
+
+func writeToFile(path string, data []byte) error {
+	// Since a single Go Template File Name might render different folder prefixes,
+	// we need to ensure they're all created.
+	if err := os.MkdirAll(filepath.Dir(path), folderChmod); err != nil {
+		return fmt.Errorf("unable to create output folder for file %q: %w", path, err)
+	}
+
+	// Open the file as read/write, create the file if it doesn't exist, and if
+	// it does, truncate it.
+	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultChmod)
+	if err != nil {
+		return fmt.Errorf("unable to create/open file %q: %w", path, err)
+	}
+
+	// Write the contents from the buffer
+	if _, err := f.Write(data); err != nil {
+		f.Close()
+		return fmt.Errorf("unable to write file contents for file %q: %w", path, err)
+	}
+
+	// Attempt to close the file cleanly
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("unable to close file after write for file %q: %w", path, err)
+	}
+
+	return nil
 }

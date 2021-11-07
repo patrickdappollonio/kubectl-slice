@@ -17,8 +17,14 @@ func (s *Split) init() error {
 
 	s.data = buf
 
-	if s.opts.OutputDirectory == "" {
-		return fmt.Errorf("output directory is empty")
+	if s.opts.OutputToStdout {
+		if s.opts.OutputDirectory != "" {
+			return fmt.Errorf("cannot specify both output to stdout and output to file: output directory is present")
+		}
+	} else {
+		if s.opts.OutputDirectory == "" {
+			return fmt.Errorf("output directory is empty")
+		}
 	}
 
 	if err := s.compileTemplate(); err != nil {

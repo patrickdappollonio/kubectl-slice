@@ -88,8 +88,10 @@ Flags:
   -h, --help                   help for kubectl-slice
   -i, --include-kind strings   kinds to include in the output (singular, case insensitive); if empty, all Kubernetes object kinds are included
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
-  -o, --output-dir string      the output directory used to output the splitted files (default ".")
+  -o, --output-dir string      the output directory used to output the splitted files
   -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
+      --sort-by-kind           if enabled, resources are sorted by Kind, a la Helm, before saving them to disk
+      --stdout                 if enabled, no resource is written to disk and all resources are printed to stdout instead
   -t, --template string        go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
   -v, --version                version for kubectl-slice
 ```
@@ -120,6 +122,11 @@ Flags:
   * If enabled, any YAMLs that don't contain at least an `apiVersion`, `kind` and `metadata.name` will be excluded from the split
   * There are no attempts to validate how correct these fields are. For example, there's no check to validate that `apiVersion` exists in a Kubernetes cluster, or whether this `apiVersion` is valid: `"example\foo"`.
     * It's useful, however, if alongside the original YAML you suspect there might be some non Kubernetes YAMLs being generated.
+* `--sort-by-kind`:
+  * If enabled, resources are sorted by Kind, like Helm does, before saving them to disk or printing them to `stdout`.
+  * If this flag is not present, resources are outputted following the order in which they were found in the YAML file.
+* `--stdout`:
+  * If enabled, no resource is written to disk and all resources are printed to `stdout` instead, useful if you want to pipe the output of `kubectl-slice` to another command or to itself. File names are still generated, but used as reference and prepended at the top of each file in the multi-YAML output. Other than that, the file name template has no effect -- it won't create any subfolders, for example.
 
 ## Why `kubectl-slice`?
 

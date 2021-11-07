@@ -12,46 +12,53 @@ import (
 
 // parseYAMLManifest parses a single YAML file as received by contents. It also renders the
 // template needed to generate its name
-func (s *Split) parseYAMLManifest(contents []byte, position int, template *template.Template) (string, error) {
+func (s *Split) parseYAMLManifest(contents []byte, position int, template *template.Template) (string, string, error) {
 	// All resources we'll handle are Kubernetes manifest, and even those who are lists,
 	// they're still Kubernetes Objects of type List, so we can use a map
 	manifest := make(map[string]interface{})
 
 	s.log.Println("Parsing YAML from buffer up to this point")
 	if err := yaml.Unmarshal(contents, &manifest); err != nil {
-		return "", fmt.Errorf("unable to parse YAML file number %d: %w", position, err)
+		return "", "", fmt.Errorf("unable to parse YAML file number %d: %w", position, err)
 	}
 
 	// Render the name to a buffer using the Go Template
 	s.log.Println("Rendering filename template from Go Template")
 	var buf bytes.Buffer
 	if err := template.Execute(&buf, manifest); err != nil {
-		return "", fmt.Errorf("unable to render file name for YAML file number %d: %w", position, improveExecError(err))
+		return "", "", fmt.Errorf("unable to render file name for YAML file number %d: %w", position, improveExecError(err))
 	}
 
 	// Check if file contains at least some Kubernetes keys
 	if s.opts.StrictKubernetes {
 		if err := checkKubernetesBasics(manifest); err != nil {
-			return "", err
+			return "", "", err
 		}
 	}
 
-	// We need to check if the file is skipped by kind
-	if hasIncluded, hasExcluded := len(s.opts.IncludedKinds) > 0, len(s.opts.ExcludedKinds) > 0; hasIncluded || hasExcluded {
-		// Retrieve the kind from the YAML code
-		kind, err := getKindFromYAML(manifest, position)
-		if err != nil {
-			return "", err
-		}
+	// Check before handling if we're about to filter resources
+	hasIncluded, hasExcluded := len(s.opts.IncludedKinds) > 0, len(s.opts.ExcludedKinds) > 0
 
+	// Retrieve the kind from the YAML code
+	kind, err := getKindFromYAML(manifest, position)
+
+	// Check if we have an error, if we do, we need to ensure we're not
+	// filtering too. When there's an error and we are filtering, the error
+	// matters. Otherwise, the error can be safely ignored
+	if err != nil && (hasIncluded || hasExcluded) {
+		return "", "", err
+	}
+
+	// We need to check if the file is skipped by kind
+	if hasIncluded || hasExcluded {
 		// If we're working with including only, then filter by it
 		if hasIncluded && !inSliceIgnoreCase(s.opts.IncludedKinds, kind) {
-			return "", &kindSkipErr{Kind: kind}
+			return "", "", &kindSkipErr{Kind: kind}
 		}
 
 		// Otherwise exclude based on the parameter received
 		if hasExcluded && inSliceIgnoreCase(s.opts.ExcludedKinds, kind) {
-			return "", &kindSkipErr{Kind: kind}
+			return "", "", &kindSkipErr{Kind: kind}
 		}
 	}
 
@@ -62,10 +69,10 @@ func (s *Split) parseYAMLManifest(contents []byte, position int, template *templ
 	name = strings.NewReplacer("<no value>", "", "\n", "").Replace(name)
 
 	if s := strings.TrimSuffix(name, filepath.Ext(name)); s == "" {
-		return "", fmt.Errorf("file name rendered will yield no file name for YAML file number %d", position)
+		return "", "", fmt.Errorf("file name rendered will yield no file name for YAML file number %d", position)
 	}
 
-	return name, nil
+	return name, kind, nil
 }
 
 // getKindFromYAML returns the kind of a Kubernetes resource from a parsed YAML file

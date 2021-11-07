@@ -38,7 +38,7 @@ func (s *Split) processSingleFile(file []byte) error {
 	file = append(file, []byte("\n\n")...)
 
 	// Send it for processing
-	name, err := s.parseYAMLManifest(file, s.fileCount, s.template)
+	name, kind, err := s.parseYAMLManifest(file, s.fileCount, s.template)
 	if err != nil {
 		switch err.(type) {
 		case *kindSkipErr:
@@ -56,19 +56,31 @@ func (s *Split) processSingleFile(file []byte) error {
 		}
 	}
 
-	// See if we have a file with the custom name
-	buf, found := s.filesFound[name]
+	existentData, position := []byte(nil), -1
+	for pos := 0; pos < len(s.filesFound); pos++ {
+		if s.filesFound[pos].name == name {
+			existentData = s.filesFound[pos].data
+			position = pos
+			break
+		}
+	}
 
-	// If not, add it. If so, we append it
-	if !found {
+	if position == -1 {
 		s.log.Printf("Got nonexistent file. Adding it to the list: %s", name)
-		s.filesFound[name] = *bytes.NewBuffer(file)
+		s.filesFound = append(s.filesFound, yamlFile{
+			name: name,
+			kind: kind,
+			data: file,
+		})
 	} else {
 		s.log.Printf("Got existent file. Appending to original buffer: %s", name)
-		fmt.Fprint(&buf, "---")
-		fmt.Fprint(&buf, "\n\n")
-		fmt.Fprint(&buf, string(file))
-		s.filesFound[name] = buf
+		existentData = append(existentData, []byte("---\n\n")...)
+		existentData = append(existentData, file...)
+		s.filesFound[position] = yamlFile{
+			name: name,
+			kind: kind,
+			data: existentData,
+		}
 	}
 
 	s.fileCount++
@@ -81,7 +93,7 @@ func (s *Split) scan() error {
 	// Since we'll be iterating over files that potentially might end up being
 	// duplicated files, we need to store them somewhere to, later, save them
 	// to files
-	s.filesFound = make(map[string]bytes.Buffer)
+	s.filesFound = make([]yamlFile, 0)
 
 	// We can totally create a single decoder then decode using that, however,
 	// we want to maintain 1:1 exactly the same declaration as the YAML originally
@@ -141,68 +153,91 @@ func (s *Split) scan() error {
 }
 
 func (s *Split) store() error {
-	// Create the output folder if it doesn't exist
-	if !s.opts.DryRun {
-		s.log.Printf("Creating directory %q if it doesn't exist.", s.opts.OutputDirectory)
-		if err := os.MkdirAll(s.opts.OutputDirectory, folderChmod); err != nil {
-			return fmt.Errorf("unable to create output directory folder %q: %w", s.opts.OutputDirectory, err)
-		}
+	// Handle output directory being empty
+	if s.opts.OutputDirectory == "" {
+		s.opts.OutputDirectory = "."
 	}
 
 	// Now save those files to disk (or if dry-run is on, print what it would
 	// save). Files will be overwritten.
 	s.fileCount = 0
-	for name, contents := range s.filesFound {
+	for _, v := range s.filesFound {
 		s.fileCount++
-		fullpath := filepath.Join(s.opts.OutputDirectory, name)
-		fileLength := contents.Len()
+
+		fullpath := filepath.Join(s.opts.OutputDirectory, v.name)
+		fileLength := len(v.data)
 
 		s.log.Printf("Handling file %q: %d bytes long.", fullpath, fileLength)
 
-		if !s.opts.DryRun {
-			dir := filepath.Dir(fullpath)
-			s.log.Printf("Ensuring folder %q exists for current file.", dir)
-
-			// Since a single Go Template File Name might render different folder prefixes,
-			// we need to ensure they're all created.
-			if err := os.MkdirAll(dir, folderChmod); err != nil {
-				return fmt.Errorf("unable to create output folder for file %q: %w", fullpath, err)
-			}
-
-			// Open the file as read/write, create the file if it doesn't exist, and if
-			// it does, truncate it.
-			f, err := os.OpenFile(fullpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultChmod)
-			if err != nil {
-				return fmt.Errorf("unable to create/open file %q: %w", fullpath, err)
-			}
-
-			// Write the contents from the buffer
-			if _, err := f.Write(contents.Bytes()); err != nil {
-				f.Close()
-				return fmt.Errorf("unable to write file contents for file %q: %w", fullpath, err)
-			}
-
-			// Attempt to close the file cleanly
-			if err := f.Close(); err != nil {
-				return fmt.Errorf("unable to close file after write for file %q: %w", fullpath, err)
-			}
-
-			fmt.Fprintf(os.Stdout, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
-
-			// Go to the next file
+		switch {
+		case s.opts.DryRun:
+			fmt.Fprintf(os.Stderr, "Would write %s -- %d bytes.\n", fullpath, fileLength)
 			continue
+
+		case s.opts.OutputToStdout:
+			if s.fileCount != 1 {
+				fmt.Fprintf(os.Stdout, "---\n\n")
+			}
+
+			fmt.Fprintf(os.Stdout, "# File: %s (%d bytes)\n", fullpath, fileLength)
+			fmt.Fprintf(os.Stdout, "%s\n", v.data)
+			continue
+
+		default:
+			// do nothing, handling below
 		}
 
-		fmt.Fprintf(os.Stdout, "Would write %s -- %d bytes.\n", fullpath, fileLength)
+		dir := filepath.Dir(fullpath)
+		s.log.Printf("Ensuring folder %q exists for current file.", dir)
+
+		// Since a single Go Template File Name might render different folder prefixes,
+		// we need to ensure they're all created.
+		if err := os.MkdirAll(dir, folderChmod); err != nil {
+			return fmt.Errorf("unable to create output folder for file %q: %w", fullpath, err)
+		}
+
+		// Open the file as read/write, create the file if it doesn't exist, and if
+		// it does, truncate it.
+		f, err := os.OpenFile(fullpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultChmod)
+		if err != nil {
+			return fmt.Errorf("unable to create/open file %q: %w", fullpath, err)
+		}
+
+		// Write the contents from the buffer
+		if _, err := f.Write(v.data); err != nil {
+			f.Close()
+			return fmt.Errorf("unable to write file contents for file %q: %w", fullpath, err)
+		}
+
+		// Attempt to close the file cleanly
+		if err := f.Close(); err != nil {
+			return fmt.Errorf("unable to close file after write for file %q: %w", fullpath, err)
+		}
+
+		fmt.Fprintf(os.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
+
+		// Go to the next file
+		continue
 	}
 
-	if s.fileCount == 1 {
-		fmt.Fprintf(os.Stdout, "%d file generated.\n", s.fileCount)
-	} else {
-		fmt.Fprintf(os.Stdout, "%d files generated.\n", s.fileCount)
+	switch {
+	case s.opts.DryRun:
+		fmt.Fprintf(os.Stderr, "%d %s generated (dry-run)\n", s.fileCount, pluralize("file", s.fileCount))
+
+	case s.opts.OutputToStdout:
+		fmt.Fprintf(os.Stderr, "%d %s parsed to stdout.\n", s.fileCount, pluralize("file", s.fileCount))
+
+	default:
+		fmt.Fprintf(os.Stderr, "%d %s generated.\n", s.fileCount, pluralize("file", s.fileCount))
 	}
 
 	return nil
+}
+
+func (s *Split) sort() {
+	if s.opts.SortByKind {
+		s.filesFound = sortYAMLsByKind(s.filesFound)
+	}
 }
 
 // Execute runs the process according to the split.Options provided. This will
@@ -211,6 +246,8 @@ func (s *Split) Execute() error {
 	if err := s.scan(); err != nil {
 		return err
 	}
+
+	s.sort()
 
 	return s.store()
 }

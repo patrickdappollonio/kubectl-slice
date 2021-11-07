@@ -19,7 +19,7 @@ type Split struct {
 	template *template.Template
 	data     *bytes.Buffer
 
-	filesFound map[string]bytes.Buffer
+	filesFound []yamlFile
 	fileCount  int
 }
 
@@ -45,6 +45,7 @@ func New(opts Options) (*Split, error) {
 type Options struct {
 	InputFile       string // the name of the input file to be read
 	OutputDirectory string // the path to the directory where the files will be stored
+	OutputToStdout  bool   // if true, the output will be written to stdout instead of a file
 	GoTemplate      string // the go template code to render the file names
 	DryRun          bool   // if true, no files are created
 	DebugMode       bool   // enables debug mode
@@ -52,4 +53,6 @@ type Options struct {
 	IncludedKinds    []string
 	ExcludedKinds    []string
 	StrictKubernetes bool // if true, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded
+
+	SortByKind bool // if true, it will sort the resources by kind
 }

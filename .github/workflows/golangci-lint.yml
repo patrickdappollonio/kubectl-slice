@@ -14,4 +14,4 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Run golangci-lint with reviewdog
-      uses: reviewdog/action-golangci-lint@v2.0.1
+      uses: reviewdog/action-golangci-lint@v2.0.2

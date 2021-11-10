@@ -16,7 +16,7 @@ import (
 
 func (s *Split) compileTemplate() error {
 	s.log.Println("About to compile template")
-	t, err := template.New("split").Funcs(templateFuncs()).Parse(s.opts.GoTemplate)
+	t, err := template.New("split").Funcs(templateFuncs).Parse(s.opts.GoTemplate)
 	if err != nil {
 		return fmt.Errorf("file name template parse failed: %w", improveExecError(err))
 	}
@@ -49,31 +49,29 @@ func improveExecError(err error) error {
 	return err
 }
 
-func templateFuncs() template.FuncMap {
-	return template.FuncMap{
-		"lower":        jsonLower,
-		"lowercase":    jsonLower,
-		"uppercase":    jsonUpper,
-		"upper":        jsonUpper,
-		"title":        jsonTitle,
-		"sprintf":      fmt.Sprintf,
-		"printf":       fmt.Sprintf,
-		"trim":         jsonTrimSpace,
-		"trimPrefix":   jsonTrimPrefix,
-		"trimSuffix":   jsonTrimSuffix,
-		"default":      fnDefault,
-		"sha1sum":      sha1sum,
-		"sha256sum":    sha256sum,
-		"str":          strJSON,
-		"required":     jsonRequired,
-		"env":          env,
-		"replace":      jsonReplace,
-		"alphanumify":  jsonAlphanumify,
-		"alphanumdash": jsonAlphanumdash,
-		"dottodash":    jsonDotToDash,
-		"dottounder":   jsonDotToUnder,
-		"index":        mapValueByIndex,
-	}
+var templateFuncs = template.FuncMap{
+	"lower":        jsonLower,
+	"lowercase":    jsonLower,
+	"uppercase":    jsonUpper,
+	"upper":        jsonUpper,
+	"title":        jsonTitle,
+	"sprintf":      fmt.Sprintf,
+	"printf":       fmt.Sprintf,
+	"trim":         jsonTrimSpace,
+	"trimPrefix":   jsonTrimPrefix,
+	"trimSuffix":   jsonTrimSuffix,
+	"default":      fnDefault,
+	"sha1sum":      sha1sum,
+	"sha256sum":    sha256sum,
+	"str":          strJSON,
+	"required":     jsonRequired,
+	"env":          env,
+	"replace":      jsonReplace,
+	"alphanumify":  jsonAlphanumify,
+	"alphanumdash": jsonAlphanumdash,
+	"dottodash":    jsonDotToDash,
+	"dottounder":   jsonDotToUnder,
+	"index":        mapValueByIndex,
 }
 
 // mapValueByIndex returns the value of the map at the given index

@@ -25,11 +25,23 @@ kubectl-slice --exclude-kind=Deployment,ReplicaSet,DaemonSet
 kubectl-slice --exclude-kind=Deployment --exclude-kind=ReplicaSet --exclude-kind=DaemonSet
 ```
 
+Additionally, you can use `--include-name` and `--exclude-name` to include or exclude resources by Kubernetes name.
+
+```bash
+kubectl-slice --exclude-name=my-deployment
+```
+
+Globs are also supported, so you can use `--include-name=foo*` to include all resources with names starting with `foo`.
+
+If a YAML resource can't be parsed to detect its name or kind, it will be included by default on any `exclude` flag.
+
+All flags are also case insensitive -- they will be converted to lowercase before applying the glob check.
+
 ## Some of the code in my YAML is an entire YAML file commented out, how do I skip it?
 
 By default, `kubectl-slice` will also slice out commented YAML file sections. If you would rather want to ensure only Kubernetes resources are sliced from the original YAML file, then there's two options:
 
-* Use `--include-kind` to only include Kubernetes resources by kind; or
+* Use `--include-kind` or `--include-name` to only include Kubernetes resources by kind or name; or
 * Use `--skip-non-k8s` to skip any non-Kubernetes resources
 
 `--include-kind` can be used so you control your entire output by specifying only the resources you want. For example, if you want to only slice out `Deployment` resources, you can use `--include-kind=Deployment`.

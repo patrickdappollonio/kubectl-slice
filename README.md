@@ -80,13 +80,18 @@ Usage:
   kubectl-slice [flags]
 
 Examples:
-kubectl-slice -f foo.yaml -o ./ -i Pod,Namespace
+  kubectl-slice -f foo.yaml -o ./ --include-kind Pod,Namespace
+  kubectl-slice -f foo.yaml -o ./ --exclude-kind Pod
+  kubectl-slice -f foo.yaml -o ./ --exclude-name *-svc
+  kubectl-slice -f foo.yaml --exclude-name *-svc --stdout
 
 Flags:
       --dry-run                if true, no files are created, but the potentially generated files will be printed as the command output
-  -e, --exclude-kind strings   kinds to exclude in the output (singular, case insensitive); if empty, all Kubernetes object kinds are excluded
+      --exclude-kind strings   resource kind to exclude in the output (singular, case insensitive, glob supported)
+      --exclude-name strings   resource name to exclude in the output (singular, case insensitive, glob supported)
   -h, --help                   help for kubectl-slice
-  -i, --include-kind strings   kinds to include in the output (singular, case insensitive); if empty, all Kubernetes object kinds are included
+      --include-kind strings   resource kind to include in the output (singular, case insensitive, glob supported)
+      --include-name strings   resource name to include in the output (singular, case insensitive, glob supported)
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
   -o, --output-dir string      the output directory used to output the splitted files
   -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
@@ -113,10 +118,10 @@ Flags:
     * If the rendered file name includes a path separator, subfolders under `--output-dir` will be created.
     * If a file already exists in `--output-directory` under this generated file name, their contents will be replaced.
 * `--exclude-kind`:
-  * A case-insensitive, comma-separated list of Kubernetes object kinds to exclude from the output.
+  * A case-insensitive, comma-separated list of Kubernetes object kinds to exclude from the output. Globs are supported.
   * You can also repeat the parameter multiple times to achieve the same effect (`--exclude-kind pod --exclude-kind deployment`)
 * `--include-kind`:
-  * A case-insensitive, comma-separated list of Kubernetes object kinds to include in the output. Any other Kubernetes object kinds will be excluded.
+  * A case-insensitive, comma-separated list of Kubernetes object kinds to include in the output. Globs are supported. Any other Kubernetes object kinds will be excluded.
   * You can also repeat the parameter multiple times to achieve the same effect (`--include-kind pod --include-kind deployment`)
 * `--skip-non-k8s`:
   * If enabled, any YAMLs that don't contain at least an `apiVersion`, `kind` and `metadata.name` will be excluded from the split
@@ -127,6 +132,12 @@ Flags:
   * If this flag is not present, resources are outputted following the order in which they were found in the YAML file.
 * `--stdout`:
   * If enabled, no resource is written to disk and all resources are printed to `stdout` instead, useful if you want to pipe the output of `kubectl-slice` to another command or to itself. File names are still generated, but used as reference and prepended at the top of each file in the multi-YAML output. Other than that, the file name template has no effect -- it won't create any subfolders, for example.
+* `--include-name`:
+  * A case-insensitive, comma-separated list of Kubernetes object names to include in the output. Globs are supported. Any other Kubernetes object names will be excluded.
+  * You can also repeat the parameter multiple times to achieve the same effect (`--include-name foo --include-name bar`)
+* `--exclude-name`:
+  * A case-insensitive, comma-separated list of Kubernetes object names to exclude from the output. Globs are supported.
+  * You can also repeat the parameter multiple times to achieve the same effect (`--exclude-name foo --exclude-name bar`)
 
 ## Why `kubectl-slice`?
 
@@ -143,5 +154,4 @@ Pull requests are welcomed! So far, looking for help with the following items, w
 * Adding unit tests
 * Improving the YAML file-by-file parser, right now it works by buffering line by line
 * Adding support to install through `brew`
-* Functions to allow accessing labels and annotations on a way different than the dot-notation from Go templates
 * [Adding new features marked as `enhancement`](//github.com/patrickdappollonio/kubectl-slice/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)

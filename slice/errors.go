@@ -2,20 +2,21 @@ package slice
 
 import "fmt"
 
-type strictModeErr struct {
+type strictModeSkipErr struct {
 	fieldName string
 }
 
-func (s *strictModeErr) Error() string {
+func (s *strictModeSkipErr) Error() string {
 	return fmt.Sprintf(
 		"resource does not have a Kubernetes %q field or the field is invalid or empty", s.fieldName,
 	)
 }
 
-type kindSkipErr struct {
-	Kind string
+type skipErr struct {
+	name string
+	kind string
 }
 
-func (e *kindSkipErr) Error() string {
-	return fmt.Sprintf("resource kind %q is configured to be skipped", e.Kind)
+func (e *skipErr) Error() string {
+	return fmt.Sprintf("resource %s %q is configured to be skipped", e.kind, e.name)
 }

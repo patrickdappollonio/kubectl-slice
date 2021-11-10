@@ -2,11 +2,11 @@ package slice
 
 import "fmt"
 
-type strictModeErr struct {
+type strictModeSkipErr struct {
 	fieldName string
 }
 
-func (s *strictModeErr) Error() string {
+func (s *strictModeSkipErr) Error() string {
 	return fmt.Sprintf(
 		"resource does not have a Kubernetes %q field or the field is invalid or empty", s.fieldName,
 	)

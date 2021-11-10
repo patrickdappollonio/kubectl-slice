@@ -30,7 +30,6 @@ func (s *Split) processSingleFile(file []byte) error {
 			return nil
 		}
 
-		s.fileCount++
 		return nil
 	}
 
@@ -38,17 +37,15 @@ func (s *Split) processSingleFile(file []byte) error {
 	file = append(file, []byte("\n\n")...)
 
 	// Send it for processing
-	name, kind, err := s.parseYAMLManifest(file, s.fileCount, s.template)
+	meta, err := s.parseYAMLManifest(file)
 	if err != nil {
 		switch err.(type) {
 		case *kindSkipErr:
 			s.log.Printf("Skipping file %d: %s", s.fileCount, err.Error())
-			s.fileCount++
 			return nil
 
-		case *strictModeErr:
+		case *strictModeSkipErr:
 			s.log.Printf("Skipping file %d: %s", s.fileCount, err.Error())
-			s.fileCount++
 			return nil
 
 		default:
@@ -58,7 +55,7 @@ func (s *Split) processSingleFile(file []byte) error {
 
 	existentData, position := []byte(nil), -1
 	for pos := 0; pos < len(s.filesFound); pos++ {
-		if s.filesFound[pos].name == name {
+		if s.filesFound[pos].filename == meta.filename {
 			existentData = s.filesFound[pos].data
 			position = pos
 			break
@@ -66,33 +63,31 @@ func (s *Split) processSingleFile(file []byte) error {
 	}
 
 	if position == -1 {
-		s.log.Printf("Got nonexistent file. Adding it to the list: %s", name)
+		s.log.Printf("Got nonexistent file. Adding it to the list: %s", meta.filename)
 		s.filesFound = append(s.filesFound, yamlFile{
-			name: name,
-			kind: kind,
-			data: file,
+			filename: meta.filename,
+			meta:     meta.meta,
+			data:     file,
 		})
 	} else {
-		s.log.Printf("Got existent file. Appending to original buffer: %s", name)
+		s.log.Printf("Got existent file. Appending to original buffer: %s", meta.filename)
 		existentData = append(existentData, []byte("---\n\n")...)
 		existentData = append(existentData, file...)
 		s.filesFound[position] = yamlFile{
-			name: name,
-			kind: kind,
-			data: existentData,
+			filename: meta.filename,
+			meta:     meta.meta,
+			data:     existentData,
 		}
 	}
 
-	s.fileCount++
 	return nil
 }
 
 func (s *Split) scan() error {
-	s.fileCount = 0
-
 	// Since we'll be iterating over files that potentially might end up being
 	// duplicated files, we need to store them somewhere to, later, save them
 	// to files
+	s.fileCount = 0
 	s.filesFound = make([]yamlFile, 0)
 
 	// We can totally create a single decoder then decode using that, however,
@@ -125,6 +120,7 @@ func (s *Split) scan() error {
 				if err := parseFile(); err != nil {
 					return err
 				}
+				s.fileCount++
 				break
 			}
 
@@ -138,6 +134,7 @@ func (s *Split) scan() error {
 			if err := parseFile(); err != nil {
 				return err
 			}
+			s.fileCount++
 			continue
 		}
 
@@ -164,7 +161,7 @@ func (s *Split) store() error {
 	for _, v := range s.filesFound {
 		s.fileCount++
 
-		fullpath := filepath.Join(s.opts.OutputDirectory, v.name)
+		fullpath := filepath.Join(s.opts.OutputDirectory, v.filename)
 		fileLength := len(v.data)
 
 		s.log.Printf("Handling file %q: %d bytes long.", fullpath, fileLength)
@@ -185,7 +182,7 @@ func (s *Split) store() error {
 
 		default:
 			// do nothing, handling below
-			if err := writeToFile(fullpath, v.data); err != nil {
+			if err := s.writeToFile(fullpath, v.data); err != nil {
 				return err
 			}
 
@@ -226,7 +223,7 @@ func (s *Split) Execute() error {
 	return s.store()
 }
 
-func writeToFile(path string, data []byte) error {
+func (s *Split) writeToFile(path string, data []byte) error {
 	// Since a single Go Template File Name might render different folder prefixes,
 	// we need to ensure they're all created.
 	if err := os.MkdirAll(filepath.Dir(path), folderChmod); err != nil {
@@ -235,6 +232,7 @@ func writeToFile(path string, data []byte) error {
 
 	// Open the file as read/write, create the file if it doesn't exist, and if
 	// it does, truncate it.
+	s.log.Printf("Opening file path %q", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultChmod)
 	if err != nil {
 		return fmt.Errorf("unable to create/open file %q: %w", path, err)

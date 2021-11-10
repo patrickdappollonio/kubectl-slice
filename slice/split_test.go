@@ -205,11 +205,14 @@ func TestEndToEnd(t *testing.T) {
 
 			defer os.RemoveAll(dir)
 
-			slice, err := New(Options{
+			opts := Options{
 				InputFile:       temp,
 				OutputDirectory: dir,
 				GoTemplate:      v.template,
-			})
+			}
+			slice, err := New(opts)
+
+			t.Logf("Opts: %#v", opts)
 
 			if err != nil {
 				tt.Fatalf("not expecting an error on New() but got: %s", err.Error())

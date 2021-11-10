@@ -3,9 +3,16 @@ package slice
 import "sort"
 
 type yamlFile struct {
-	name string
-	kind string
-	data []byte
+	filename string
+	meta     kubeObjectMeta
+	data     []byte
+}
+
+type kubeObjectMeta struct {
+	APIVersion string
+	Kind       string
+	Name       string
+	Namespace  string
 }
 
 // from: https://github.com/helm/helm/blob/v3.7.1/pkg/releaseutil/kind_sorter.go#L31
@@ -46,9 +53,10 @@ var helmInstallOrder = []string{
 	"APIService",
 }
 
+// from: https://github.com/helm/helm/blob/v3.7.1/pkg/releaseutil/kind_sorter.go#L111
 func sortYAMLsByKind(manifests []yamlFile) []yamlFile {
 	sort.SliceStable(manifests, func(i, j int) bool {
-		return lessByKind(manifests[i], manifests[j], manifests[i].kind, manifests[j].kind, helmInstallOrder)
+		return lessByKind(manifests[i], manifests[j], manifests[i].meta.Kind, manifests[j].meta.Kind, helmInstallOrder)
 	})
 
 	return manifests

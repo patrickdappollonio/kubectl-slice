@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mb0/glob"
 	"gopkg.in/yaml.v3"
 )
 
@@ -47,23 +48,50 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 	}
 
 	// Check before handling if we're about to filter resources
-	hasIncluded, hasExcluded := len(s.opts.IncludedKinds) > 0, len(s.opts.ExcludedKinds) > 0
+	var (
+		hasKindIncluded = len(s.opts.IncludedKinds) > 0
+		hasKindExcluded = len(s.opts.ExcludedKinds) > 0
+		hasNameIncluded = len(s.opts.IncludedNames) > 0
+		hasNameExcluded = len(s.opts.ExcludedNames) > 0
+	)
 
-	// Check if we have a Kubernetes kind
-	if k8smeta.Kind == "" && (hasIncluded || hasExcluded) {
-		return yamlFile{}, fmt.Errorf("unable to find Kubernetes resource kind in file number %d", s.fileCount)
+	s.log.Printf(
+		"Applying filters -> kindIncluded: %v; kindExcluded: %v; nameIncluded: %v; nameExcluded: %v",
+		s.opts.IncludedKinds, s.opts.ExcludedKinds, s.opts.IncludedNames, s.opts.ExcludedNames,
+	)
+
+	s.log.Printf("Found K8s meta -> %#v", k8smeta)
+
+	// Check if we have a Kubernetes kind and we're requesting inclusion or exclusion
+	if k8smeta.Kind == "" && (hasKindIncluded || hasKindExcluded) {
+		return yamlFile{}, fmt.Errorf("unable to find Kubernetes \"kind\" field in file number %d", s.fileCount)
+	}
+
+	// Check if we have a Kubernetes name and we're requesting inclusion or exclusion
+	if k8smeta.Name == "" && (hasNameIncluded || hasNameExcluded) {
+		return yamlFile{}, fmt.Errorf("unable to find Kubernetes \"metadata.name\" field in file number %d", s.fileCount)
 	}
 
 	// We need to check if the file is skipped by kind
-	if hasIncluded || hasExcluded {
-		// If we're working with including only, then filter by it
-		if hasIncluded && !inSliceIgnoreCase(s.opts.IncludedKinds, k8smeta.Kind) {
-			return yamlFile{}, &kindSkipErr{Kind: k8smeta.Kind}
+	if hasKindIncluded || hasKindExcluded || hasNameIncluded || hasNameExcluded {
+		// If we're working with including only specific kinds, then filter by it
+		if hasKindIncluded && !inSliceIgnoreCaseGlob(s.opts.IncludedKinds, k8smeta.Kind) {
+			return yamlFile{}, &skipErr{kind: "kind", name: k8smeta.Kind}
 		}
 
-		// Otherwise exclude based on the parameter received
-		if hasExcluded && inSliceIgnoreCase(s.opts.ExcludedKinds, k8smeta.Kind) {
-			return yamlFile{}, &kindSkipErr{Kind: k8smeta.Kind}
+		// Otherwise exclude kinds based on the parameter received
+		if hasKindExcluded && inSliceIgnoreCaseGlob(s.opts.ExcludedKinds, k8smeta.Kind) {
+			return yamlFile{}, &skipErr{kind: "kind", name: k8smeta.Kind}
+		}
+
+		// If we're working with including only specific names, then filter by it
+		if hasNameIncluded && !inSliceIgnoreCaseGlob(s.opts.IncludedNames, k8smeta.Name) {
+			return yamlFile{}, &skipErr{kind: "name", name: k8smeta.Name}
+		}
+
+		// Otherwise exclude names based on the parameter received
+		if hasNameExcluded && inSliceIgnoreCaseGlob(s.opts.ExcludedNames, k8smeta.Name) {
+			return yamlFile{}, &skipErr{kind: "name", name: k8smeta.Name}
 		}
 	}
 
@@ -86,6 +114,22 @@ func inSliceIgnoreCase(slice []string, expected string) bool {
 
 	for _, a := range slice {
 		if strings.ToLower(a) == expected {
+			return true
+		}
+	}
+
+	return false
+}
+
+// inSliceIgnoreCaseGlob checks if a string is in a slice, ignoring case and
+// allowing the use of a glob pattern
+func inSliceIgnoreCaseGlob(slice []string, expected string) bool {
+	expected = strings.ToLower(expected)
+
+	for _, pattern := range slice {
+		pattern = strings.ToLower(pattern)
+
+		if match, _ := glob.Match(pattern, expected); match {
 			return true
 		}
 	}

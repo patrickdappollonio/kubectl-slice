@@ -4,5 +4,5 @@ import "testing"
 
 func TestErrorsInterface(t *testing.T) {
 	var _ error = &strictModeSkipErr{}
-	var _ error = &kindSkipErr{}
+	var _ error = &skipErr{}
 }

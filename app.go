@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -17,6 +18,26 @@ const (
 For documentation, available functions, and more, visit: https://github.com/patrickdappollonio/kubectl-slice.`
 )
 
+var examples = []string{
+	"kubectl-slice -f foo.yaml -o ./ --include-kind Pod,Namespace",
+	"kubectl-slice -f foo.yaml -o ./ --exclude-kind Pod",
+	"kubectl-slice -f foo.yaml -o ./ --exclude-name *-svc",
+	"kubectl-slice -f foo.yaml --exclude-name *-svc --stdout",
+}
+
+func generateExamples([]string) string {
+	var s bytes.Buffer
+	for pos, v := range examples {
+		s.WriteString(fmt.Sprintf("  %s", v))
+
+		if pos != len(examples)-1 {
+			s.WriteString("\n")
+		}
+	}
+
+	return s.String()
+}
+
 func root() *cobra.Command {
 	opts := slice.Options{}
 
@@ -27,7 +48,7 @@ func root() *cobra.Command {
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Example:       `kubectl-slice -f foo.yaml -o ./ -i Pod,Namespace`,
+		Example:       generateExamples(examples),
 		RunE: func(_ *cobra.Command, args []string) error {
 			// If no input file has been provided or it's "-", then
 			// point the app to stdin
@@ -50,8 +71,10 @@ func root() *cobra.Command {
 	rootCommand.Flags().StringVarP(&opts.GoTemplate, "template", "t", slice.DefaultTemplateName, "go template used to generate the file name when creating the resource files in the output directory")
 	rootCommand.Flags().BoolVar(&opts.DryRun, "dry-run", false, "if true, no files are created, but the potentially generated files will be printed as the command output")
 	rootCommand.Flags().BoolVar(&opts.DebugMode, "debug", false, "enable debug mode")
-	rootCommand.Flags().StringSliceVarP(&opts.IncludedKinds, "include-kind", "i", nil, "kinds to include in the output (singular, case insensitive, glob supported); if empty, all Kubernetes object kinds are included")
-	rootCommand.Flags().StringSliceVarP(&opts.ExcludedKinds, "exclude-kind", "e", nil, "kinds to exclude in the output (singular, case insensitive, glob supported); if empty, all Kubernetes object kinds are excluded")
+	rootCommand.Flags().StringSliceVar(&opts.IncludedKinds, "include-kind", nil, "resource kind to include in the output (singular, case insensitive, glob supported)")
+	rootCommand.Flags().StringSliceVar(&opts.ExcludedKinds, "exclude-kind", nil, "resource kind to exclude in the output (singular, case insensitive, glob supported)")
+	rootCommand.Flags().StringSliceVar(&opts.IncludedNames, "include-name", nil, "resource name to include in the output (singular, case insensitive, glob supported)")
+	rootCommand.Flags().StringSliceVar(&opts.ExcludedNames, "exclude-name", nil, "resource name to exclude in the output (singular, case insensitive, glob supported)")
 	rootCommand.Flags().BoolVarP(&opts.StrictKubernetes, "skip-non-k8s", "s", false, "if enabled, any YAMLs that don't contain at least an \"apiVersion\", \"kind\" and \"metadata.name\" will be excluded from the split")
 	rootCommand.Flags().BoolVar(&opts.SortByKind, "sort-by-kind", false, "if enabled, resources are sorted by Kind, a la Helm, before saving them to disk")
 	rootCommand.Flags().BoolVar(&opts.OutputToStdout, "stdout", false, "if enabled, no resource is written to disk and all resources are printed to stdout instead")

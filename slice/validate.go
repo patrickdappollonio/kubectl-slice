@@ -9,6 +9,10 @@ func (s *Split) init() error {
 		return fmt.Errorf("cannot specify both included and excluded kinds")
 	}
 
+	if len(s.opts.IncludedNames) > 0 && len(s.opts.ExcludedNames) > 0 {
+		return fmt.Errorf("cannot specify both included and excluded names")
+	}
+
 	s.log.Printf("Loading file %s", s.opts.InputFile)
 	buf, err := loadfile(s.opts.InputFile)
 	if err != nil {

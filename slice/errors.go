@@ -12,10 +12,11 @@ func (s *strictModeSkipErr) Error() string {
 	)
 }
 
-type kindSkipErr struct {
-	Kind string
+type skipErr struct {
+	name string
+	kind string
 }
 
-func (e *kindSkipErr) Error() string {
-	return fmt.Sprintf("resource kind %q is configured to be skipped", e.Kind)
+func (e *skipErr) Error() string {
+	return fmt.Sprintf("resource %s %q is configured to be skipped", e.kind, e.name)
 }

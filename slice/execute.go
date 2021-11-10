@@ -40,7 +40,7 @@ func (s *Split) processSingleFile(file []byte) error {
 	meta, err := s.parseYAMLManifest(file)
 	if err != nil {
 		switch err.(type) {
-		case *kindSkipErr:
+		case *skipErr:
 			s.log.Printf("Skipping file %d: %s", s.fileCount, err.Error())
 			return nil
 

@@ -31,11 +31,89 @@ func Test_inSliceIgnoreCase(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "pattern fo-star without glob support",
+			args: args{
+				slice:    []string{"fo*", "bar"},
+				expected: "foo",
+			},
+			want: false,
+		},
+		{
+			name: "pattern anything without glob support",
+			args: args{
+				slice:    []string{"*"},
+				expected: "foo",
+			},
+			want: false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := inSliceIgnoreCase(tt.args.slice, tt.args.expected); got != tt.want {
+				t.Errorf("inSliceIgnoreCase() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_inSliceIgnoreCaseGlob(t *testing.T) {
+	type args struct {
+		slice    []string
+		expected string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "in slice",
+			args: args{
+				slice:    []string{"foo", "bar"},
+				expected: "foo",
+			},
+			want: true,
+		},
+		{
+			name: "not in slice",
+			args: args{
+				slice:    []string{"foo", "bar"},
+				expected: "baz",
+			},
+			want: false,
+		},
+		{
+			name: "pattern fo-star",
+			args: args{
+				slice:    []string{"fo*", "bar"},
+				expected: "foo",
+			},
+			want: true,
+		},
+		{
+			name: "pattern anything",
+			args: args{
+				slice:    []string{"*"},
+				expected: "foo",
+			},
+			want: true,
+		},
+		{
+			name: "kubernetes annotation",
+			args: args{
+				slice:    []string{"kubernetes.io/*"},
+				expected: "kubernetes.io/ingress.class",
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := inSliceIgnoreCaseGlob(tt.args.slice, tt.args.expected); got != tt.want {
 				t.Errorf("inSliceIgnoreCase() = %v, want %v", got, tt.want)
 			}
 		})

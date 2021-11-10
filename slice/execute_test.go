@@ -102,6 +102,19 @@ metadata:
 		},
 		// ----------------------------------------------------------------
 		{
+			name: "skipping name",
+			fields: Options{
+				IncludedNames: []string{"foofoo"},
+			},
+			fileInput: `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: foobar
+`,
+		},
+		// ----------------------------------------------------------------
+		{
 			name:      "invalid YAML",
 			fields:    Options{},
 			fileInput: `kind: "Namespace`,
@@ -120,12 +133,10 @@ kind: "Namespace
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Logf("File: \n%s", string(tt.fileInput))
-
 			s := &Split{
 				opts:     tt.fields,
 				log:      log.New(os.Stderr, "", log.LstdFlags),
-				template: template.Must(template.New("split").Funcs(templateFuncs()).Parse(DefaultTemplateName)),
+				template: template.Must(template.New("split").Funcs(templateFuncs).Parse(DefaultTemplateName)),
 			}
 
 			if err := s.processSingleFile([]byte(tt.fileInput)); (err != nil) != tt.wantErr {
@@ -162,7 +173,7 @@ kind: "Namespace
 				}
 			} else {
 				if len(s.filesFound) != 0 {
-					t.Errorf("expected 0 files from list, got %d", len(s.filesFound))
+					t.Errorf("expected 0 files from list, got %d: %s", len(s.filesFound), s.filesFound[0].filename)
 				}
 			}
 		})

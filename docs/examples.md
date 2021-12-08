@@ -18,6 +18,7 @@ We'll use the following filename template so there's one folder for each Kuberne
 We will render the Helm Chart locally to `stdout` with:
 
 ```bash
+helm repo add cdf https://cdfoundation.github.io/tekton-helm-chart/
 helm template tekton cdf/tekton-pipeline
 ```
 

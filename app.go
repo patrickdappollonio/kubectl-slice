@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muesli/coral"
 	"github.com/patrickdappollonio/kubectl-slice/slice"
-	"github.com/spf13/cobra"
 )
 
 var version = "development"
@@ -38,10 +38,10 @@ func generateExamples([]string) string {
 	return s.String()
 }
 
-func root() *cobra.Command {
+func root() *coral.Command {
 	opts := slice.Options{}
 
-	rootCommand := &cobra.Command{
+	rootCommand := &coral.Command{
 		Use:           "kubectl-slice",
 		Short:         helpShort,
 		Long:          helpLong,
@@ -49,7 +49,7 @@ func root() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Example:       generateExamples(examples),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(_ *coral.Command, args []string) error {
 			// If no input file has been provided or it's "-", then
 			// point the app to stdin
 			if opts.InputFile == "" || opts.InputFile == "-" {

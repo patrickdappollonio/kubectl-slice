@@ -25,7 +25,7 @@ helm template tekton cdf/tekton-pipeline
 Then we can pipe that output directly to `kubectl-slice`:
 
 ```bash
-helm template tekton cdf/tekton-pipeline | kubectl-slice --template '{{.kind|lower}}/{{.metadata.name|dottodash}}.yaml'
+helm template tekton cdf/tekton-pipeline | kubectl-slice --template '{{.kind|lower}}/{{.metadata.name|dottodash}}.yaml' --output-dir .
 ```
 
 Which will render the following output:

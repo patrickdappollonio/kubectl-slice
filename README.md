@@ -44,9 +44,9 @@ metadata:
 Then the following files will be created:
 
 ```text
-$ kubectl-slice --input-file=example.yaml
-Wrote pod-nginx-ingress.yaml -- 57 bytes.
-Wrote namespace-production.yaml -- 60 bytes.
+$ kubectl-slice --input-file=input.yaml --output-dir=.
+Wrote pod-nginx-ingress.yaml -- 58 bytes.
+Wrote namespace-production.yaml -- 61 bytes.
 2 files generated.
 ```
 

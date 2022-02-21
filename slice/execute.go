@@ -199,7 +199,7 @@ func (s *Split) store() error {
 		fmt.Fprintf(os.Stderr, "%d %s parsed to stdout.\n", s.fileCount, pluralize("file", s.fileCount))
 
 	default:
-		if !s.Quiet {
+		if !s.opts.Quiet {
 			fmt.Fprintf(os.Stderr, "%d %s generated.\n", s.fileCount, pluralize("file", s.fileCount))
 		}
 	}

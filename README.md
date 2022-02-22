@@ -94,6 +94,7 @@ Flags:
       --include-name strings   resource name to include in the output (singular, case insensitive, glob supported)
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
   -o, --output-dir string      the output directory used to output the splitted files
+  -q, --quiet                  silences all output to stdout/err when writing to files
   -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
       --sort-by-kind           if enabled, resources are sorted by Kind, a la Helm, before saving them to disk
       --stdout                 if enabled, no resource is written to disk and all resources are printed to stdout instead

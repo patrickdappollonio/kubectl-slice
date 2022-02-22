@@ -71,6 +71,7 @@ func root() *coral.Command {
 	rootCommand.Flags().StringVarP(&opts.GoTemplate, "template", "t", slice.DefaultTemplateName, "go template used to generate the file name when creating the resource files in the output directory")
 	rootCommand.Flags().BoolVar(&opts.DryRun, "dry-run", false, "if true, no files are created, but the potentially generated files will be printed as the command output")
 	rootCommand.Flags().BoolVar(&opts.DebugMode, "debug", false, "enable debug mode")
+	rootCommand.Flags().BoolVarP(&opts.Quiet, "quiet", "q", false, "if true, no output is written to stdout/err")
 	rootCommand.Flags().StringSliceVar(&opts.IncludedKinds, "include-kind", nil, "resource kind to include in the output (singular, case insensitive, glob supported)")
 	rootCommand.Flags().StringSliceVar(&opts.ExcludedKinds, "exclude-kind", nil, "resource kind to exclude in the output (singular, case insensitive, glob supported)")
 	rootCommand.Flags().StringSliceVar(&opts.IncludedNames, "include-name", nil, "resource name to include in the output (singular, case insensitive, glob supported)")

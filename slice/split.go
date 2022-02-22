@@ -49,6 +49,7 @@ type Options struct {
 	GoTemplate      string // the go template code to render the file names
 	DryRun          bool   // if true, no files are created
 	DebugMode       bool   // enables debug mode
+	Quiet           bool   //disables all writing to StdOut/StdErr
 
 	IncludedKinds    []string
 	ExcludedKinds    []string

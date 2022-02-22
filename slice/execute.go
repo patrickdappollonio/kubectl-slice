@@ -186,7 +186,9 @@ func (s *Split) store() error {
 				return err
 			}
 
-			fmt.Fprintf(os.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
+			if !s.opts.Quiet {
+				fmt.Fprintf(os.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
+			}
 			continue
 		}
 	}

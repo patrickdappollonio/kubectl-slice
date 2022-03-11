@@ -68,7 +68,7 @@ kubectl krew install slice
 
 ### Download and install manually
 
-Download the latest release for your platform from the [Releases page](https://github.com/patrickdappollonio/kubectl-slice/releases), then extract and move the `kubectl-slice` binary to any place in your `$PATH`. If you have `kubectl` installed, you can use both `kubectl-slice` and `kubectl split` (note in the later the absence of the `-`).
+Download the latest release for your platform from the [Releases page](https://github.com/patrickdappollonio/kubectl-slice/releases), then extract and move the `kubectl-slice` binary to any place in your `$PATH`. If you have `kubectl` installed, you can use both `kubectl-slice` and `kubectl slice` (note in the later the absence of the `-`).
 
 ## Usage
 

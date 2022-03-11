@@ -117,9 +117,12 @@ func (s *Split) scan() error {
 			// If we reached the end of file, handle up to this point
 			if err == io.EOF {
 				s.log.Println("Reached end of file while parsing. Sending remaining buffer to process.")
+				fmt.Fprint(&local, line)
+
 				if err := parseFile(); err != nil {
 					return err
 				}
+
 				s.fileCount++
 				break
 			}
@@ -129,7 +132,7 @@ func (s *Split) scan() error {
 		}
 
 		// Check if we're at the end of the file
-		if line == "---\n" {
+		if line == "---\n" || line == "---\r\n" {
 			s.log.Println("Found the end of a file. Sending buffer to process.")
 			if err := parseFile(); err != nil {
 				return err

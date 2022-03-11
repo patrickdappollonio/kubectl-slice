@@ -144,6 +144,8 @@ foo: baz
 ---
 bar: baz`
 
+var allInOneCRLF = "foo: bar\r\n---\r\nfoo: baz\r\n---\r\nbar: baz\r\n"
+
 var allInOneOutput = map[string]string{
 	"example.yaml": `foo: bar
 
@@ -172,6 +174,12 @@ func TestEndToEnd(t *testing.T) {
 		{
 			name:          "everything in a single file",
 			inputFile:     allInOne,
+			template:      "example.yaml",
+			expectedFiles: allInOneOutput,
+		},
+		{
+			name:          "everything in a single file, CRLF",
+			inputFile:     allInOneCRLF,
 			template:      "example.yaml",
 			expectedFiles: allInOneOutput,
 		},

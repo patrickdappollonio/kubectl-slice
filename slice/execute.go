@@ -171,16 +171,16 @@ func (s *Split) store() error {
 
 		switch {
 		case s.opts.DryRun:
-			fmt.Fprintf(os.Stderr, "Would write %s -- %d bytes.\n", fullpath, fileLength)
+			fmt.Fprintf(s.opts.Stderr, "Would write %s -- %d bytes.\n", fullpath, fileLength)
 			continue
 
 		case s.opts.OutputToStdout:
 			if s.fileCount != 1 {
-				fmt.Fprintf(os.Stdout, "---\n\n")
+				fmt.Fprintf(s.opts.Stdout, "---\n\n")
 			}
 
-			fmt.Fprintf(os.Stdout, "# File: %s (%d bytes)\n", fullpath, fileLength)
-			fmt.Fprintf(os.Stdout, "%s\n", v.data)
+			fmt.Fprintf(s.opts.Stdout, "# File: %s (%d bytes)\n", fullpath, fileLength)
+			fmt.Fprintf(s.opts.Stdout, "%s\n", v.data)
 			continue
 
 		default:
@@ -190,7 +190,7 @@ func (s *Split) store() error {
 			}
 
 			if !s.opts.Quiet {
-				fmt.Fprintf(os.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
+				fmt.Fprintf(s.opts.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
 			}
 			continue
 		}
@@ -198,14 +198,14 @@ func (s *Split) store() error {
 
 	switch {
 	case s.opts.DryRun:
-		fmt.Fprintf(os.Stderr, "%d %s generated (dry-run)\n", s.fileCount, pluralize("file", s.fileCount))
+		fmt.Fprintf(s.opts.Stderr, "%d %s generated (dry-run)\n", s.fileCount, pluralize("file", s.fileCount))
 
 	case s.opts.OutputToStdout:
-		fmt.Fprintf(os.Stderr, "%d %s parsed to stdout.\n", s.fileCount, pluralize("file", s.fileCount))
+		fmt.Fprintf(s.opts.Stderr, "%d %s parsed to stdout.\n", s.fileCount, pluralize("file", s.fileCount))
 
 	default:
 		if !s.opts.Quiet {
-			fmt.Fprintf(os.Stderr, "%d %s generated.\n", s.fileCount, pluralize("file", s.fileCount))
+			fmt.Fprintf(s.opts.Stderr, "%d %s generated.\n", s.fileCount, pluralize("file", s.fileCount))
 		}
 	}
 

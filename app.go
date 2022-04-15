@@ -49,7 +49,11 @@ func root() *coral.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Example:       generateExamples(examples),
-		RunE: func(_ *coral.Command, args []string) error {
+		RunE: func(cmd *coral.Command, args []string) error {
+			// Bind to the appropriate stdout/stderr
+			opts.Stdout = cmd.OutOrStdout()
+			opts.Stderr = cmd.ErrOrStderr()
+
 			// If no input file has been provided or it's "-", then
 			// point the app to stdin
 			if opts.InputFile == "" || opts.InputFile == "-" {

@@ -220,7 +220,7 @@ func TestEndToEnd(t *testing.T) {
 			}
 			slice, err := New(opts)
 
-			t.Logf("Opts: %#v", opts)
+			t.Logf("Opts: %#v", slice.opts)
 
 			if err != nil {
 				tt.Fatalf("not expecting an error on New() but got: %s", err.Error())

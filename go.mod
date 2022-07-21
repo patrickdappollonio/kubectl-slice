@@ -1,6 +1,6 @@
 module github.com/patrickdappollonio/kubectl-slice
 
-go 1.17
+go 1.18
 
 require (
 	github.com/mb0/glob v0.0.0-20160210091149-1eb79d2de6c4

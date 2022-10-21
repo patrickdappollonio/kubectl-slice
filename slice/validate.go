@@ -72,7 +72,7 @@ func (s *Split) validateFilters() error {
 
 	for _, excluded := range s.opts.Excluded {
 		if matched, _ := regexp.MatchString(regKN, excluded); !matched {
-			return fmt.Errorf("invalidad excluded pattern '%s' should be {kind}/${name}", excluded)
+			return fmt.Errorf("invalid excluded pattern %q should be <kind>/<name>", excluded)
 		}
 	}
 

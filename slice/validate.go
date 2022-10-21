@@ -30,11 +30,7 @@ func (s *Split) init() error {
 		return err
 	}
 
-	if err := s.validateFilters(); err != nil {
-		return err
-	}
-
-	return nil
+	return s.validateFilters()
 }
 
 func (s *Split) validateFilters() error {

@@ -5,7 +5,8 @@ import (
 	"regexp"
 )
 
-const regKN = `^[^/]+/[^/]+$`
+var regKN = regexp.MustCompile(`^[^/]+/[^/]+$`)
+
 
 func (s *Split) init() error {
 	s.log.Printf("Loading file %s", s.opts.InputFile)
@@ -65,13 +66,13 @@ func (s *Split) validateFilters() error {
 
 	// Validate included and excluded filters.
 	for _, included := range s.opts.Included {
-		if matched, _ := regexp.MatchString(regKN, included); !matched {
+		if !regKN.MatchString(included) {
 			return fmt.Errorf("invalid included pattern %q should be <kind>/<name>", included)
 		}
 	}
 
 	for _, excluded := range s.opts.Excluded {
-		if matched, _ := regexp.MatchString(regKN, excluded); !matched {
+		if !regKN.MatchString(excluded) {
 			return fmt.Errorf("invalid excluded pattern %q should be <kind>/<name>", excluded)
 		}
 	}

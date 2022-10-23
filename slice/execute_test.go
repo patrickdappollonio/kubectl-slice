@@ -9,11 +9,12 @@ import (
 
 func TestSplit_processSingleFile(t *testing.T) {
 	tests := []struct {
-		name       string
-		fields     Options
-		fileInput  string
-		wantErr    bool
-		fileOutput *yamlFile
+		name          string
+		fields        Options
+		fileInput     string
+		wantErr       bool
+		wantFilterErr bool
+		fileOutput    *yamlFile
 	}{
 		{
 			name:   "basic pod",
@@ -38,6 +39,26 @@ metadata:
 			name: "include kind",
 			fields: Options{
 				IncludedKinds: []string{"Pod"},
+			},
+			fileInput: `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-ingress
+`,
+			fileOutput: &yamlFile{
+				filename: "pod-nginx-ingress.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Pod",
+					Name:       "nginx-ingress",
+				},
+			},
+		},
+		{
+			name: "include Pod using include option",
+			fields: Options{
+				Included: []string{"Pod/*"},
 			},
 			fileInput: `
 apiVersion: v1
@@ -129,6 +150,20 @@ kind: "Namespace
 `,
 			wantErr: true,
 		},
+		{
+			name: "invalid excluded",
+			fields: Options{
+				Excluded: []string{"Pod/Namespace/*"},
+			},
+			wantFilterErr: true,
+		},
+		{
+			name: "invalid included",
+			fields: Options{
+				Included: []string{"Pod"},
+			},
+			wantFilterErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -137,6 +172,10 @@ kind: "Namespace
 				opts:     tt.fields,
 				log:      log.New(os.Stderr, "", log.LstdFlags),
 				template: template.Must(template.New("split").Funcs(templateFuncs).Parse(DefaultTemplateName)),
+			}
+
+			if err := s.validateFilters(); (err != nil) != tt.wantFilterErr {
+				t.Errorf("error = %v, wantErr %v", err, tt.wantFilterErr)
 			}
 
 			if err := s.processSingleFile([]byte(tt.fileInput)); (err != nil) != tt.wantErr {

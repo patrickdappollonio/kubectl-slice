@@ -15,6 +15,56 @@ type kubeObjectMeta struct {
 	Namespace  string
 }
 
+func newKubeObjectMeta(meta map[string]interface{}) *kubeObjectMeta {
+	var k8smeta kubeObjectMeta
+
+	if v, found := meta["apiVersion"]; found {
+		if s, ok := v.(string); ok {
+			k8smeta.APIVersion = s
+		}
+	}
+
+	if v, found := meta["kind"]; found {
+		if s, ok := v.(string); ok {
+			k8smeta.Kind = s
+		}
+	}
+
+	if v, found := meta["metadata"]; found {
+		if m, ok := v.(map[string]interface{}); ok {
+			if v, found := m["name"]; found {
+				if s, ok := v.(string); ok {
+					k8smeta.Name = s
+				}
+			}
+
+			if v, found := m["namespace"]; found {
+				if s, ok := v.(string); ok {
+					k8smeta.Namespace = s
+				}
+			}
+		}
+	}
+
+	return &k8smeta
+}
+
+func (k *kubeObjectMeta) findMissingField() string {
+	if k.APIVersion == "" {
+		return "apiVersion"
+	}
+
+	if k.Kind == "" {
+		return "kind"
+	}
+
+	if k.Name == "" {
+		return "metadata.name"
+	}
+
+	return ""
+}
+
 // from: https://github.com/helm/helm/blob/v3.7.1/pkg/releaseutil/kind_sorter.go#L31
 var helmInstallOrder = []string{
 	"Namespace",

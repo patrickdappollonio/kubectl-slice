@@ -30,20 +30,12 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 	}
 
 	// Check if file contains the required Kubernetes metadata
-	k8smeta := checkKubernetesBasics(manifest)
+	k8smeta := newKubeObjectMeta(manifest)
 
 	// Check if at least the three fields are not empty
 	if s.opts.StrictKubernetes {
-		if k8smeta.APIVersion == "" {
-			return yamlFile{}, &strictModeSkipErr{fieldName: "apiVersion"}
-		}
-
-		if k8smeta.Kind == "" {
-			return yamlFile{}, &strictModeSkipErr{fieldName: "kind"}
-		}
-
-		if k8smeta.Name == "" {
-			return yamlFile{}, &strictModeSkipErr{fieldName: "metadata.name"}
+		if str := k8smeta.findMissingField(); str != "" {
+			return yamlFile{}, &strictModeSkipErr{fieldName: str}
 		}
 	}
 
@@ -91,7 +83,7 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 		return yamlFile{}, fmt.Errorf("file name rendered will yield no file name for YAML file number %d", s.fileCount)
 	}
 
-	return yamlFile{filename: name, meta: k8smeta}, nil
+	return yamlFile{filename: name, meta: *k8smeta}, nil
 }
 
 // inSliceIgnoreCase checks if a string is in a slice, ignoring case
@@ -137,18 +129,4 @@ func checkStringInMap(local map[string]interface{}, key string) string {
 	}
 
 	return str
-}
-
-// checkKubernetesBasics check if the minimum required keys are there for a Kubernetes Object
-func checkKubernetesBasics(manifest map[string]interface{}) kubeObjectMeta {
-	var metadata kubeObjectMeta
-
-	metadata.APIVersion = checkStringInMap(manifest, "apiVersion")
-	metadata.Kind = checkStringInMap(manifest, "kind")
-
-	if md, found := manifest["metadata"]; found {
-		metadata.Name = checkStringInMap(md.(map[string]interface{}), "name")
-	}
-
-	return metadata
 }

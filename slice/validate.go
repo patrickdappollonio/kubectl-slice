@@ -66,13 +66,13 @@ func (s *Split) validateFilters() error {
 	// Validate included and excluded filters.
 	for _, included := range s.opts.Included {
 		if !regKN.MatchString(included) {
-			return fmt.Errorf("invalidad included pattern '%s' should be {kind}/${name}", included)
+			return fmt.Errorf("invalid included pattern %q should be <kind>/<name>", included)
 		}
 	}
 
 	for _, excluded := range s.opts.Excluded {
 		if !regKN.MatchString(excluded) {
-			return fmt.Errorf("invalidad excluded pattern '%s' should be {kind}/${name}", excluded)
+			return fmt.Errorf("invalid excluded pattern %q should be <kind>/<name>", excluded)
 		}
 	}
 

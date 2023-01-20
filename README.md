@@ -1,6 +1,5 @@
 # `kubectl-slice`: split Kubernetes YAMLs into files
 
-[![Tests passing](https://img.shields.io/github/workflow/status/patrickdappollonio/kubectl-slice/Testing/master?logo=github&style=flat-square)](https://github.com/patrickdappollonio/kubectl-slice/actions)
 [![Downloads](https://img.shields.io/github/downloads/patrickdappollonio/kubectl-slice/total?color=blue&logo=github&style=flat-square)](https://github.com/patrickdappollonio/kubectl-slice/releases)
 
 - [`kubectl-slice`: split Kubernetes YAMLs into files](#kubectl-slice-split-kubernetes-yamls-into-files)

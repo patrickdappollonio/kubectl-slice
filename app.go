@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/muesli/coral"
 	"github.com/patrickdappollonio/kubectl-slice/slice"
+	"github.com/spf13/cobra"
 )
 
 var version = "development"
@@ -40,10 +40,10 @@ func generateExamples([]string) string {
 	return s.String()
 }
 
-func root() *coral.Command {
+func root() *cobra.Command {
 	opts := slice.Options{}
 
-	rootCommand := &coral.Command{
+	rootCommand := &cobra.Command{
 		Use:           "kubectl-slice",
 		Short:         helpShort,
 		Long:          helpLong,
@@ -51,7 +51,7 @@ func root() *coral.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Example:       generateExamples(examples),
-		RunE: func(cmd *coral.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bind to the appropriate stdout/stderr
 			opts.Stdout = cmd.OutOrStdout()
 			opts.Stderr = cmd.ErrOrStderr()

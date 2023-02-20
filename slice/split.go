@@ -10,12 +10,20 @@ import (
 
 const DefaultTemplateName = "{{.kind | lower}}-{{.metadata.name}}.yaml"
 
+// Logger is the interface used by Split to log debug messages
+// and it's satisfied by Go's log.Logger
+type Logger interface {
+	Printf(format string, v ...interface{})
+	SetOutput(w io.Writer)
+	Println(v ...interface{})
+}
+
 // Split is a Kubernetes Split instance. Each instance has its own template
 // used to generate the resource names when saving to disk. Because of this,
 // avoid reusing the same instance of Split
 type Split struct {
 	opts     Options
-	log      *log.Logger
+	log      Logger
 	template *template.Template
 	data     *bytes.Buffer
 

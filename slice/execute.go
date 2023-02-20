@@ -33,9 +33,6 @@ func (s *Split) processSingleFile(file []byte) error {
 		return nil
 	}
 
-	// Add an empty line at the end
-	file = append(file, []byte("\n")...)
-
 	// Send it for processing
 	meta, err := s.parseYAMLManifest(file)
 	if err != nil {
@@ -71,7 +68,7 @@ func (s *Split) processSingleFile(file []byte) error {
 		})
 	} else {
 		s.log.Printf("Got existent file. Appending to original buffer: %s", meta.filename)
-		existentData = append(existentData, []byte("---\n")...)
+		existentData = append(existentData, []byte("\n---\n")...)
 		existentData = append(existentData, file...)
 		s.filesFound[position] = yamlFile{
 			filename: meta.filename,
@@ -117,7 +114,7 @@ func (s *Split) scan() error {
 			// If we reached the end of file, handle up to this point
 			if err == io.EOF {
 				s.log.Println("Reached end of file while parsing. Sending remaining buffer to process.")
-				fmt.Fprint(&local, line)
+				local.WriteString(line)
 
 				if err := parseFile(); err != nil {
 					return err
@@ -235,7 +232,7 @@ func (s *Split) writeToFile(path string, data []byte) error {
 
 	// Open the file as read/write, create the file if it doesn't exist, and if
 	// it does, truncate it.
-	s.log.Printf("Opening file path %q", path)
+	s.log.Printf("Opening file path %q for writing", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultChmod)
 	if err != nil {
 		return fmt.Errorf("unable to create/open file %q: %w", path, err)
@@ -243,21 +240,14 @@ func (s *Split) writeToFile(path string, data []byte) error {
 
 	defer f.Close()
 
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, f); err != nil {
-		return fmt.Errorf("unable to read file contents for file %q: %w", path, err)
+	// Check if the last character is a newline, and if not, add one
+	if !bytes.HasSuffix(data, []byte{'\n'}) {
+		s.log.Printf("Adding new line to end of contents (content did not end on a line break)")
+		data = append(data, '\n')
 	}
 
-	if buf.Len() != 0 {
-		s.log.Printf("File %q already exists, appending to it.", path)
-		fmt.Fprint(&buf, "\n\n")
-	}
-
-	if _, err := fmt.Fprint(&buf, string(data)); err != nil {
-		return fmt.Errorf("unable to write file contents for file %q: %w", path, err)
-	}
-
-	if _, err := f.Write(buf.Bytes()); err != nil {
+	// Write the entire file buffer back to the file in disk
+	if _, err := f.Write(data); err != nil {
 		return fmt.Errorf("unable to write file contents for file %q: %w", path, err)
 	}
 

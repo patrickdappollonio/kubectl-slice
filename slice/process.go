@@ -53,10 +53,8 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 		hasExcluded = len(s.opts.Excluded) > 0
 	)
 
-	s.log.Printf(
-		"Applying filters -> Included: %v; Excluded: %v", s.opts.Included, s.opts.Excluded)
-
-	s.log.Printf("Found K8s meta -> %#v", k8smeta)
+	s.log.Printf("Applying filters -> Included: %v; Excluded: %v", s.opts.Included, s.opts.Excluded)
+	s.log.Printf("Kubernetes metadata found -> %#v", k8smeta)
 
 	// Check if we have a Kubernetes kind and we're requesting inclusion or exclusion
 	if k8smeta.Kind == "" && (hasIncluded || hasExcluded) {
@@ -148,6 +146,7 @@ func checkKubernetesBasics(manifest map[string]interface{}) kubeObjectMeta {
 
 	if md, found := manifest["metadata"]; found {
 		metadata.Name = checkStringInMap(md.(map[string]interface{}), "name")
+		metadata.Namespace = checkStringInMap(md.(map[string]interface{}), "namespace")
 	}
 
 	return metadata

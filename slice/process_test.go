@@ -2,6 +2,10 @@ package slice
 
 import (
 	"testing"
+	"text/template"
+
+	local "github.com/patrickdappollonio/kubectl-slice/slice/template"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_inSliceIgnoreCase(t *testing.T) {
@@ -238,6 +242,130 @@ func Test_checkKubernetesBasics(t *testing.T) {
 			if meta.Name != tt.want.Name {
 				t.Errorf("checkKubernetesBasics() Name = %v, want %v", meta.Name, tt.want.Name)
 			}
+		})
+	}
+}
+
+func TestSplit_parseYAMLManifest(t *testing.T) {
+	tests := []struct {
+		name       string
+		contents   []byte
+		strictKube bool
+		want       yamlFile
+		wantErr    bool
+	}{
+		{
+			name: "valid yaml with namespace",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+  namespace: bar
+`),
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "bar",
+				},
+			},
+		},
+		{
+			name: "valid yaml without namespace",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+`),
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "",
+				},
+			},
+		},
+		{
+			name: "valid yaml with namespace, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+  namespace: bar
+`),
+			strictKube: true,
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "bar",
+				},
+			},
+		},
+		{
+			name: "valid yaml without namespace, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+`),
+			strictKube: true,
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "",
+				},
+			},
+		},
+		{
+			name: "apiVersion only, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+`),
+			strictKube: true,
+			wantErr:    true,
+		},
+		{
+			name: "apiVersion + kind, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+kind: Foo
+`),
+			strictKube: true,
+			wantErr:    true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			s := &Split{
+				log:      nolog,
+				template: template.Must(template.New(DefaultTemplateName).Funcs(local.Functions).Parse(DefaultTemplateName)),
+			}
+			s.opts.StrictKubernetes = tt.strictKube
+
+			got, err := s.parseYAMLManifest(tt.contents)
+
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

@@ -23,73 +23,31 @@ func TestMainApp(t *testing.T) {
 		stderr string
 	}{
 		{
-			name: "readme sample",
-			file: `apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-ingress
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: production`,
-			stdout: `# File: pod-nginx-ingress.yaml (56 bytes)
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-ingress
-
----
-# File: namespace-production.yaml (59 bytes)
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: production
-`,
-			stderr: `2 files parsed to stdout.`,
+			name:   "readme sample",
+			file:   "slice/testdata/ingress-namespace.yaml",
+			stdout: "slice/testdata/ingress-namespace/stdout.yaml",
+			stderr: "slice/testdata/ingress-namespace/stderr",
 		},
 		{
-			name: "non-kubernetes file",
-			file: `kind: foo
-name: bar
-age: baz
----
-another: file`,
-			stdout: `# File: foo-.yaml (28 bytes)
-kind: foo
-name: bar
-age: baz
-
----
-# File: -.yaml (13 bytes)
-another: file`,
-			stderr: `2 files parsed to stdout.`,
+			name:   "non-kubernetes file",
+			file:   "slice/testdata/non-kubernetes.yaml",
+			stdout: "slice/testdata/non-kubernetes/stdout.yaml",
+			stderr: "slice/testdata/non-kubernetes/stderr",
 		},
 		{
-			name: "non-kubernetes file with skip non k8s enabled",
-			file: `kind: foo
-name: bar
-age: baz
----
-another: file`,
+			name:   "non-kubernetes file with skip non k8s enabled",
+			file:   "slice/testdata/non-kubernetes-skip.yaml",
 			flags:  []string{"--skip-non-k8s"},
-			stdout: "",
-			stderr: `0 files parsed to stdout.`,
+			stdout: "slice/testdata/non-kubernetes-skip/stdout",
+			stderr: "slice/testdata/non-kubernetes-skip/stderr",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(tt *testing.T) {
-			f, err := os.CreateTemp("/tmp", "kubectl-slice-testing-file-*")
-			require.NoErrorf(tt, err, "unable to create temporary file")
-			defer os.Remove(f.Name())
-
-			_, err = f.Write([]byte(c.file))
-			require.NoErrorf(tt, err, "unable to write to temporary file")
-
 			var stdout, stderr bytes.Buffer
 
-			baseArgs := []string{"--input-file=" + f.Name(), "--stdout"}
+			baseArgs := []string{"--input-file=" + c.file, "--stdout"}
 			args := append(baseArgs, c.flags...)
 
 			cmd := root()
@@ -97,8 +55,14 @@ another: file`,
 			cmd.SetErr(&stderr)
 			cmd.SetArgs(args)
 			require.NoError(tt, cmd.Execute())
-			require.EqualValues(tt, c.stdout, stdout.String())
-			require.EqualValues(tt, c.stderr, stderr.String())
+
+			appout, err := os.ReadFile(c.stdout)
+			require.NoError(tt, err)
+			apperr, err := os.ReadFile(c.stderr)
+			require.NoError(tt, err)
+
+			require.EqualValues(tt, string(appout), stdout.String())
+			require.EqualValues(tt, string(apperr), stderr.String())
 		})
 	}
 }

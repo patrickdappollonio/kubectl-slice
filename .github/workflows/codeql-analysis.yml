@@ -2,12 +2,12 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ master ]
+    branches: [main]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ master ]
+    branches: [main]
   schedule:
-    - cron: '26 3 * * 4'
+    - cron: "26 3 * * 4"
 
 jobs:
   analyze:
@@ -21,19 +21,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'go' ]
-        
+        language: ["go"]
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: ${{ matrix.language }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2

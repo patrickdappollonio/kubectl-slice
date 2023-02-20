@@ -2,10 +2,11 @@ package slice
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const fileFolderPrefix = "kubectl-slice-test-"
@@ -123,9 +124,7 @@ spec:
   ports:
   - port: 8000`,
 	"-.yaml": `# foo
-
 ---
-
 # apiVersion: v1
 # kind: Pod
 # metadata:
@@ -148,13 +147,9 @@ var allInOneCRLF = "foo: bar\r\n---\r\nfoo: baz\r\n---\r\nbar: baz\r\n"
 
 var allInOneOutput = map[string]string{
 	"example.yaml": `foo: bar
-
 ---
-
 foo: baz
-
 ---
-
 bar: baz`,
 }
 
@@ -186,7 +181,7 @@ func TestEndToEnd(t *testing.T) {
 	}
 
 	createTempYAML := func(contents string) (string, error) {
-		f, err := ioutil.TempFile("/tmp", fileFolderPrefix+"file-*")
+		f, err := os.CreateTemp("/tmp", fileFolderPrefix+"file-*")
 		if err != nil {
 			return "", fmt.Errorf("unable to create temporary file: %w", err)
 		}
@@ -206,7 +201,7 @@ func TestEndToEnd(t *testing.T) {
 
 			defer os.Remove(temp)
 
-			dir, err := ioutil.TempDir("/tmp", fileFolderPrefix+"folder-*")
+			dir, err := os.MkdirTemp("/tmp", fileFolderPrefix+"folder-*")
 			if err != nil {
 				tt.Fatalf("unable to create temporary directory: %s", err.Error())
 			}
@@ -228,7 +223,7 @@ func TestEndToEnd(t *testing.T) {
 				tt.Fatalf("not expecting an error on Execute() but got: %s", err.Error())
 			}
 
-			files, err := ioutil.ReadDir(dir)
+			files, err := os.ReadDir(dir)
 			if err != nil {
 				tt.Fatalf("unable to read directory %q: %s", dir, err.Error())
 			}
@@ -243,7 +238,7 @@ func TestEndToEnd(t *testing.T) {
 					continue
 				}
 
-				f, err := ioutil.ReadFile(dir + "/" + v.Name())
+				f, err := os.ReadFile(dir + "/" + v.Name())
 				if err != nil {
 					tt.Fatalf("unable to read file %q: %s", v.Name(), err.Error())
 				}
@@ -272,12 +267,7 @@ func TestEndToEnd(t *testing.T) {
 					tt.Fatalf("expecting to find file %q but it was not found", originalName)
 				}
 
-				if originalValue != currentFile {
-					tt.Fatalf(
-						"on file %q, expecting to get %d bytes of data, and got %d: files are different\n%s\n%s",
-						originalName, len(originalValue), len(currentFile), originalValue, currentFile,
-					)
-				}
+				require.Equalf(tt, originalValue, currentFile, "on file %q", originalName)
 			}
 		})
 	}

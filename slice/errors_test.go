@@ -1,8 +1,12 @@
 package slice
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 func TestErrorsInterface(t *testing.T) {
-	var _ error = &strictModeSkipErr{}
-	var _ error = &skipErr{}
+	require.Implementsf(t, (*error)(nil), &strictModeSkipErr{}, "strictModeSkipErr should implement error")
+	require.Implementsf(t, (*error)(nil), &skipErr{}, "skipErr should implement error")
 }

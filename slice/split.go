@@ -3,7 +3,6 @@ package slice
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"text/template"
@@ -27,7 +26,7 @@ type Split struct {
 // New creates a new Split instance with the options set
 func New(opts Options) (*Split, error) {
 	s := &Split{
-		log: log.New(ioutil.Discard, "[debug] ", log.Lshortfile),
+		log: log.New(io.Discard, "[debug] ", log.Lshortfile),
 	}
 
 	if opts.Stdout == nil {

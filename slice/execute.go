@@ -34,7 +34,7 @@ func (s *Split) processSingleFile(file []byte) error {
 	}
 
 	// Add an empty line at the end
-	file = append(file, []byte("\n\n")...)
+	file = append(file, []byte("\n")...)
 
 	// Send it for processing
 	meta, err := s.parseYAMLManifest(file)
@@ -71,7 +71,7 @@ func (s *Split) processSingleFile(file []byte) error {
 		})
 	} else {
 		s.log.Printf("Got existent file. Appending to original buffer: %s", meta.filename)
-		existentData = append(existentData, []byte("---\n\n")...)
+		existentData = append(existentData, []byte("---\n")...)
 		existentData = append(existentData, file...)
 		s.filesFound[position] = yamlFile{
 			filename: meta.filename,
@@ -171,16 +171,16 @@ func (s *Split) store() error {
 
 		switch {
 		case s.opts.DryRun:
-			fmt.Fprintf(s.opts.Stderr, "Would write %s -- %d bytes.\n", fullpath, fileLength)
+			s.WriteStderr("Would write %s -- %d bytes.", fullpath, fileLength)
 			continue
 
 		case s.opts.OutputToStdout:
 			if s.fileCount != 1 {
-				fmt.Fprintf(s.opts.Stdout, "---\n\n")
+				s.WriteStdout("---")
 			}
 
-			fmt.Fprintf(s.opts.Stdout, "# File: %s (%d bytes)\n", fullpath, fileLength)
-			fmt.Fprintf(s.opts.Stdout, "%s\n", v.data)
+			s.WriteStdout("# File: %s (%d bytes)", fullpath, fileLength)
+			s.WriteStdout("%s", v.data)
 			continue
 
 		default:
@@ -189,24 +189,20 @@ func (s *Split) store() error {
 				return err
 			}
 
-			if !s.opts.Quiet {
-				fmt.Fprintf(s.opts.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
-			}
+			s.WriteStderr("Wrote %s -- %d bytes.", fullpath, fileLength)
 			continue
 		}
 	}
 
 	switch {
 	case s.opts.DryRun:
-		fmt.Fprintf(s.opts.Stderr, "%d %s generated (dry-run)\n", s.fileCount, pluralize("file", s.fileCount))
+		s.WriteStderr("%d %s generated (dry-run)", s.fileCount, pluralize("file", s.fileCount))
 
 	case s.opts.OutputToStdout:
-		fmt.Fprintf(s.opts.Stderr, "%d %s parsed to stdout.\n", s.fileCount, pluralize("file", s.fileCount))
+		s.WriteStderr("%d %s parsed to stdout.", s.fileCount, pluralize("file", s.fileCount))
 
 	default:
-		if !s.opts.Quiet {
-			fmt.Fprintf(s.opts.Stderr, "%d %s generated.\n", s.fileCount, pluralize("file", s.fileCount))
-		}
+		s.WriteStderr("%d %s generated.", s.fileCount, pluralize("file", s.fileCount))
 	}
 
 	return nil
@@ -245,9 +241,23 @@ func (s *Split) writeToFile(path string, data []byte) error {
 		return fmt.Errorf("unable to create/open file %q: %w", path, err)
 	}
 
-	// Write the contents from the buffer
-	if _, err := f.Write(data); err != nil {
-		f.Close()
+	defer f.Close()
+
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, f); err != nil {
+		return fmt.Errorf("unable to read file contents for file %q: %w", path, err)
+	}
+
+	if buf.Len() != 0 {
+		s.log.Printf("File %q already exists, appending to it.", path)
+		fmt.Fprint(&buf, "\n\n")
+	}
+
+	if _, err := fmt.Fprint(&buf, string(data)); err != nil {
+		return fmt.Errorf("unable to write file contents for file %q: %w", path, err)
+	}
+
+	if _, err := f.Write(buf.Bytes()); err != nil {
 		return fmt.Errorf("unable to write file contents for file %q: %w", path, err)
 	}
 

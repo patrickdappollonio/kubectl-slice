@@ -5,6 +5,9 @@ import (
 	"os"
 	"testing"
 	"text/template"
+
+	local "github.com/patrickdappollonio/kubectl-slice/slice/template"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSplit_processSingleFile(t *testing.T) {
@@ -171,49 +174,32 @@ kind: "Namespace
 			s := &Split{
 				opts:     tt.fields,
 				log:      log.New(os.Stderr, "", log.LstdFlags),
-				template: template.Must(template.New("split").Funcs(templateFuncs).Parse(DefaultTemplateName)),
+				template: template.Must(template.New("split").Funcs(local.Functions).Parse(DefaultTemplateName)),
 			}
 
 			if err := s.validateFilters(); (err != nil) != tt.wantFilterErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantFilterErr)
+				require.Error(t, err)
 			}
 
 			if err := s.processSingleFile([]byte(tt.fileInput)); (err != nil) != tt.wantErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
+				require.Error(t, err)
 			}
 
 			expectingFile := tt.fileOutput != nil
 
-			if expectingFile && len(s.filesFound) != 1 {
-				t.Errorf("expected 1 file from list, got %d", len(s.filesFound))
+			if expectingFile {
+				require.Lenf(t, s.filesFound, 1, "expected 1 file from list, got %d", len(s.filesFound))
 			}
 
 			if expectingFile {
 				current := s.filesFound[0]
-
-				if current.filename != tt.fileOutput.filename {
-					t.Errorf("expected filename %s, got %s", tt.fileOutput.filename, current.filename)
-				}
-
-				if current.meta.APIVersion != tt.fileOutput.meta.APIVersion {
-					t.Errorf("expected apiVersion %s, got %s", tt.fileOutput.meta.APIVersion, current.meta.APIVersion)
-				}
-
-				if current.meta.Kind != tt.fileOutput.meta.Kind {
-					t.Errorf("expected kind %s, got %s", tt.fileOutput.meta.Kind, current.meta.Kind)
-				}
-
-				if current.meta.Name != tt.fileOutput.meta.Name {
-					t.Errorf("expected name %s, got %s", tt.fileOutput.meta.Name, current.meta.Name)
-				}
-
-				if current.meta.Namespace != tt.fileOutput.meta.Namespace {
-					t.Errorf("expected namespace %s, got %s", tt.fileOutput.meta.Namespace, current.meta.Namespace)
-				}
+				require.Equal(t, tt.fileOutput.filename, current.filename)
+				require.Equal(t, tt.fileOutput.meta.APIVersion, current.meta.APIVersion)
+				require.Equal(t, tt.fileOutput.meta.Kind, current.meta.Kind)
+				require.Equal(t, tt.fileOutput.meta.Name, current.meta.Name)
+				require.Equal(t, tt.fileOutput.meta.Namespace, current.meta.Namespace)
 			} else {
-				if len(s.filesFound) != 0 {
-					t.Errorf("expected 0 files from list, got %d: %s", len(s.filesFound), s.filesFound[0].filename)
-				}
+				require.Lenf(t, s.filesFound, 0, "expected 0 files from list, got %d", len(s.filesFound))
 			}
 		})
 	}

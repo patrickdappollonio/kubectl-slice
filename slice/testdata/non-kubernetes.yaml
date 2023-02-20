@@ -1,0 +1,5 @@
+kind: foo
+name: bar
+age: baz
+---
+another: file

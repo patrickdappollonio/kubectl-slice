@@ -117,9 +117,7 @@ func Test_inSliceIgnoreCaseGlob(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := inSliceIgnoreCaseGlob(tt.args.slice, tt.args.expected); got != tt.want {
-				t.Errorf("inSliceIgnoreCase() = %v, want %v", got, tt.want)
-			}
+			require.Equal(t, tt.want, inSliceIgnoreCaseGlob(tt.args.slice, tt.args.expected))
 		})
 	}
 }
@@ -171,9 +169,7 @@ func Test_checkStringInMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if str := checkStringInMap(tt.args.local, tt.args.key); str != tt.want {
-				t.Errorf("checkStringInMap() = %v, want %v", str, tt.want)
-			}
+			require.Equal(t, tt.want, checkStringInMap(tt.args.local, tt.args.key))
 		})
 	}
 }
@@ -229,19 +225,7 @@ func Test_checkKubernetesBasics(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			meta := checkKubernetesBasics(tt.args.manifest)
-
-			if meta.Kind != tt.want.Kind {
-				t.Errorf("checkKubernetesBasics() Kind = %v, want %v", meta.Kind, tt.want.Kind)
-			}
-
-			if meta.APIVersion != tt.want.APIVersion {
-				t.Errorf("checkKubernetesBasics() APIVersion = %v, want %v", meta.APIVersion, tt.want.APIVersion)
-			}
-
-			if meta.Name != tt.want.Name {
-				t.Errorf("checkKubernetesBasics() Name = %v, want %v", meta.Name, tt.want.Name)
-			}
+			require.Equal(t, tt.want, checkKubernetesBasics(tt.args.manifest))
 		})
 	}
 }
@@ -358,13 +342,7 @@ kind: Foo
 			s.opts.StrictKubernetes = tt.strictKube
 
 			got, err := s.parseYAMLManifest(tt.contents)
-
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-
+			requireErrorIf(t, tt.wantErr, err)
 			require.Equal(t, tt.want, got)
 		})
 	}

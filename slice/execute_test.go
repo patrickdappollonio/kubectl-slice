@@ -186,17 +186,10 @@ kind: "Namespace
 				fileCount: 1,
 			}
 
-			if err := s.validateFilters(); (err != nil) != tt.wantFilterErr {
-				require.Error(t, err)
-			}
+			requireErrorIf(t, tt.wantFilterErr, s.validateFilters())
+			requireErrorIf(t, tt.wantErr, s.processSingleFile([]byte(tt.fileInput)))
 
-			if err := s.processSingleFile([]byte(tt.fileInput)); (err != nil) != tt.wantErr {
-				require.Error(t, err)
-			}
-
-			expectingFile := tt.fileOutput != nil
-
-			if expectingFile {
+			if tt.fileOutput != nil {
 				require.Lenf(t, s.filesFound, 1, "expected 1 file from list, got %d", len(s.filesFound))
 
 				current := s.filesFound[0]

@@ -15,7 +15,7 @@ type kubeObjectMeta struct {
 	Namespace  string
 }
 
-// from: https://github.com/helm/helm/blob/v3.7.1/pkg/releaseutil/kind_sorter.go#L31
+// from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#LL31-L67C2
 var helmInstallOrder = []string{
 	"Namespace",
 	"NetworkPolicy",
@@ -49,11 +49,12 @@ var helmInstallOrder = []string{
 	"StatefulSet",
 	"Job",
 	"CronJob",
+	"IngressClass",
 	"Ingress",
 	"APIService",
 }
 
-// from: https://github.com/helm/helm/blob/v3.7.1/pkg/releaseutil/kind_sorter.go#L111
+// from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#L113-L119
 func sortYAMLsByKind(manifests []yamlFile) []yamlFile {
 	sort.SliceStable(manifests, func(i, j int) bool {
 		return lessByKind(manifests[i], manifests[j], manifests[i].meta.Kind, manifests[j].meta.Kind, helmInstallOrder)
@@ -62,7 +63,7 @@ func sortYAMLsByKind(manifests []yamlFile) []yamlFile {
 	return manifests
 }
 
-// from: https://github.com/helm/helm/blob/v3.7.1/pkg/releaseutil/kind_sorter.go#L131
+// from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#L133-L158
 func lessByKind(a interface{}, b interface{}, kindA string, kindB string, o []string) bool {
 	ordering := make(map[string]int, len(o))
 	for v, k := range o {

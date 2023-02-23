@@ -7,10 +7,11 @@ jobs:
   close-issues:
     runs-on: ubuntu-latest
     permissions:
+      contents: write # only for delete-branch option
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@v5
+      - uses: actions/stale@v7
         with:
           days-before-issue-stale: 30
           days-before-issue-close: 14

@@ -7,7 +7,6 @@ import (
 
 var regKN = regexp.MustCompile(`^[^/]+/[^/]+$`)
 
-
 func (s *Split) init() error {
 	s.log.Printf("Loading file %s", s.opts.InputFile)
 	buf, err := loadfile(s.opts.InputFile)

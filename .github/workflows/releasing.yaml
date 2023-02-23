@@ -2,7 +2,7 @@ name: Releasing
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   goreleaser:
@@ -16,11 +16,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: "1.20"
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
       - name: Test application
         run: go test -v ./...
       - name: Release application to Github
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
           version: latest

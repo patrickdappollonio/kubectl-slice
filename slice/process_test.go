@@ -2,6 +2,10 @@ package slice
 
 import (
 	"testing"
+	"text/template"
+
+	local "github.com/patrickdappollonio/kubectl-slice/slice/template"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_inSliceIgnoreCase(t *testing.T) {
@@ -113,9 +117,7 @@ func Test_inSliceIgnoreCaseGlob(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := inSliceIgnoreCaseGlob(tt.args.slice, tt.args.expected); got != tt.want {
-				t.Errorf("inSliceIgnoreCase() = %v, want %v", got, tt.want)
-			}
+			require.Equal(t, tt.want, inSliceIgnoreCaseGlob(tt.args.slice, tt.args.expected))
 		})
 	}
 }
@@ -167,9 +169,7 @@ func Test_checkStringInMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if str := checkStringInMap(tt.args.local, tt.args.key); str != tt.want {
-				t.Errorf("checkStringInMap() = %v, want %v", str, tt.want)
-			}
+			require.Equal(t, tt.want, checkStringInMap(tt.args.local, tt.args.key))
 		})
 	}
 }
@@ -225,19 +225,125 @@ func Test_checkKubernetesBasics(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			meta := checkKubernetesBasics(tt.args.manifest)
+			require.Equal(t, tt.want, checkKubernetesBasics(tt.args.manifest))
+		})
+	}
+}
 
-			if meta.Kind != tt.want.Kind {
-				t.Errorf("checkKubernetesBasics() Kind = %v, want %v", meta.Kind, tt.want.Kind)
-			}
+func TestSplit_parseYAMLManifest(t *testing.T) {
+	tests := []struct {
+		name       string
+		contents   []byte
+		strictKube bool
+		want       yamlFile
+		wantErr    bool
+	}{
+		{
+			name: "valid yaml with namespace",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+  namespace: bar
+`),
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "bar",
+				},
+			},
+		},
+		{
+			name: "valid yaml without namespace",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+`),
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "",
+				},
+			},
+		},
+		{
+			name: "valid yaml with namespace, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+  namespace: bar
+`),
+			strictKube: true,
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "bar",
+				},
+			},
+		},
+		{
+			name: "valid yaml without namespace, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+`),
+			strictKube: true,
+			want: yamlFile{
+				filename: "service-foo.yaml",
+				meta: kubeObjectMeta{
+					APIVersion: "v1",
+					Kind:       "Service",
+					Name:       "foo",
+					Namespace:  "",
+				},
+			},
+		},
+		{
+			name: "apiVersion only, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+`),
+			strictKube: true,
+			wantErr:    true,
+		},
+		{
+			name: "apiVersion + kind, strict kubernetes",
+			contents: []byte(`---
+apiVersion: v1
+kind: Foo
+`),
+			strictKube: true,
+			wantErr:    true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-			if meta.APIVersion != tt.want.APIVersion {
-				t.Errorf("checkKubernetesBasics() APIVersion = %v, want %v", meta.APIVersion, tt.want.APIVersion)
+			s := &Split{
+				log:      nolog,
+				template: template.Must(template.New(DefaultTemplateName).Funcs(local.Functions).Parse(DefaultTemplateName)),
 			}
+			s.opts.StrictKubernetes = tt.strictKube
 
-			if meta.Name != tt.want.Name {
-				t.Errorf("checkKubernetesBasics() Name = %v, want %v", meta.Name, tt.want.Name)
-			}
+			got, err := s.parseYAMLManifest(tt.contents)
+			requireErrorIf(t, tt.wantErr, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

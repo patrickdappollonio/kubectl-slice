@@ -1,0 +1,64 @@
+---
+# foo
+---
+
+---
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: hello-docker
+#   labels:
+#     app: hello-docker-app
+# spec:
+#   containers:
+#   - name: hello-docker-container
+#     image: patrickdappollonio/hello-docker
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-docker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hello-docker-app
+  template:
+    metadata:
+      labels:
+        app: hello-docker-app
+    spec:
+      containers:
+        - name: hello-docker-container
+          image: patrickdappollonio/hello-docker
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-docker-svc
+spec:
+  selector:
+    app: hello-docker-app
+  ports:
+    - port: 8000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-docker-ing
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: foo.bar
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hello-docker-svc
+                port:
+                  number: 8000

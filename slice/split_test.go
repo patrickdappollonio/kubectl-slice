@@ -1,237 +1,75 @@
 package slice
 
 import (
-	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-const fileFolderPrefix = "kubectl-slice-test-"
+type noopLogger struct{}
 
-var largeFile = `
----
-# foo
----
----
-# apiVersion: v1
-# kind: Pod
-# metadata:
-#   name: hello-docker
-#   labels:
-#     app: hello-docker-app
-# spec:
-#   containers:
-#   - name: hello-docker-container
-#     image: patrickdappollonio/hello-docker
+func (noopLogger) Println(...interface{})            {}
+func (noopLogger) SetOutput(_ io.Writer)             {}
+func (noopLogger) Printf(_ string, _ ...interface{}) {}
 
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: hello-docker
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: hello-docker-app
-  template:
-    metadata:
-      labels:
-        app: hello-docker-app
-    spec:
-      containers:
-      - name: hello-docker-container
-        image: patrickdappollonio/hello-docker
-
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: hello-docker-svc
-spec:
-  selector:
-    app: hello-docker-app
-  ports:
-  - port: 8000
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: hello-docker-ing
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: foo.bar
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: hello-docker-svc
-            port:
-              number: 8000`
-
-var largeFileSplitted = map[string]string{
-	"deployment-hello-docker.yaml": `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: hello-docker
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: hello-docker-app
-  template:
-    metadata:
-      labels:
-        app: hello-docker-app
-    spec:
-      containers:
-      - name: hello-docker-container
-        image: patrickdappollonio/hello-docker`,
-	"ingress-hello-docker-ing.yaml": `apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: hello-docker-ing
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: foo.bar
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: hello-docker-svc
-            port:
-              number: 8000`,
-	"service-hello-docker-svc.yaml": `apiVersion: v1
-kind: Service
-metadata:
-  name: hello-docker-svc
-spec:
-  selector:
-    app: hello-docker-app
-  ports:
-  - port: 8000`,
-	"-.yaml": `# foo
-
----
-
-# apiVersion: v1
-# kind: Pod
-# metadata:
-#   name: hello-docker
-#   labels:
-#     app: hello-docker-app
-# spec:
-#   containers:
-#   - name: hello-docker-container
-#     image: patrickdappollonio/hello-docker`,
-}
-
-var allInOne = `foo: bar
----
-foo: baz
----
-bar: baz`
-
-var allInOneCRLF = "foo: bar\r\n---\r\nfoo: baz\r\n---\r\nbar: baz\r\n"
-
-var allInOneOutput = map[string]string{
-	"example.yaml": `foo: bar
-
----
-
-foo: baz
-
----
-
-bar: baz`,
-}
+var nolog = &noopLogger{}
 
 func TestEndToEnd(t *testing.T) {
 	cases := []struct {
 		name          string
 		inputFile     string
 		template      string
-		expectedFiles map[string]string
+		expectedFiles []string
 	}{
 		{
-			name:          "end to end",
-			inputFile:     largeFile,
-			template:      DefaultTemplateName,
-			expectedFiles: largeFileSplitted,
+			name:      "end to end",
+			inputFile: "full.yaml",
+			template:  DefaultTemplateName,
+			expectedFiles: []string{
+				"full/-.yaml",
+				"full/deployment-hello-docker.yaml",
+				"full/ingress-hello-docker-ing.yaml",
+				"full/service-hello-docker-svc.yaml",
+			},
 		},
 		{
-			name:          "everything in a single file",
-			inputFile:     allInOne,
+			name:          "basic file, non-k8s",
+			inputFile:     "simple-no-k8s.yaml",
 			template:      "example.yaml",
-			expectedFiles: allInOneOutput,
+			expectedFiles: []string{"simple-no-k8s/example.yaml"},
 		},
 		{
-			name:          "everything in a single file, CRLF",
-			inputFile:     allInOneCRLF,
+			name:          "basic file, non-k8s, CRLF line endings",
+			inputFile:     "simple-no-k8s-crlf.yaml",
 			template:      "example.yaml",
-			expectedFiles: allInOneOutput,
+			expectedFiles: []string{"simple-no-k8s/example.yaml"},
 		},
-	}
-
-	createTempYAML := func(contents string) (string, error) {
-		f, err := ioutil.TempFile("/tmp", fileFolderPrefix+"file-*")
-		if err != nil {
-			return "", fmt.Errorf("unable to create temporary file: %w", err)
-		}
-
-		fmt.Fprintln(f, contents)
-		f.Close()
-
-		return f.Name(), nil
 	}
 
 	for _, v := range cases {
 		t.Run(v.name, func(tt *testing.T) {
-			temp, err := createTempYAML(v.inputFile)
-			if err != nil {
-				tt.Fatal(err.Error())
-			}
-
-			defer os.Remove(temp)
-
-			dir, err := ioutil.TempDir("/tmp", fileFolderPrefix+"folder-*")
-			if err != nil {
-				tt.Fatalf("unable to create temporary directory: %s", err.Error())
-			}
-
-			defer os.RemoveAll(dir)
+			dir := t.TempDir()
 
 			opts := Options{
-				InputFile:       temp,
+				InputFile:       filepath.Join("testdata", v.inputFile),
 				OutputDirectory: dir,
 				GoTemplate:      v.template,
+				Stdout:          io.Discard,
+				Stderr:          io.Discard,
 			}
+
 			slice, err := New(opts)
+			require.NoError(tt, err, "not expecting an error")
+			require.NoError(tt, slice.Execute(), "not expecting an error on Execute()")
 
-			if err != nil {
-				tt.Fatalf("not expecting an error on New() but got: %s", err.Error())
-			}
+			slice.log = nolog
 
-			if err := slice.Execute(); err != nil {
-				tt.Fatalf("not expecting an error on Execute() but got: %s", err.Error())
-			}
-
-			files, err := ioutil.ReadDir(dir)
-			if err != nil {
-				tt.Fatalf("unable to read directory %q: %s", dir, err.Error())
-			}
+			files, err := os.ReadDir(dir)
+			require.NoError(tt, err, "not expecting an error on ReadDir()")
 
 			converted := make(map[string]string)
 			for _, v := range files {
@@ -243,7 +81,7 @@ func TestEndToEnd(t *testing.T) {
 					continue
 				}
 
-				f, err := ioutil.ReadFile(dir + "/" + v.Name())
+				f, err := os.ReadFile(dir + "/" + v.Name())
 				if err != nil {
 					tt.Fatalf("unable to read file %q: %s", v.Name(), err.Error())
 				}
@@ -251,17 +89,17 @@ func TestEndToEnd(t *testing.T) {
 				converted[v.Name()] = string(f)
 			}
 
-			if a, b := len(v.expectedFiles), len(converted); a != b {
-				tt.Fatalf("expecting to get %d files but got %d converted", a, b)
-			}
+			require.Equalf(tt, len(v.expectedFiles), len(converted), "required vs converted file length mismatch")
 
-			for originalName, originalValue := range v.expectedFiles {
-				originalValue = originalValue + "\n\n"
+			for _, originalName := range v.expectedFiles {
+				originalValue, err := os.ReadFile(filepath.Join("testdata", originalName))
+				require.NoError(tt, err, "not expecting an error while reading testdata file")
+
 				found := false
 				currentFile := ""
 
 				for receivedName, receivedValue := range converted {
-					if originalName == receivedName {
+					if filepath.Base(originalName) == receivedName {
 						found = true
 						currentFile = receivedValue
 						break
@@ -272,12 +110,7 @@ func TestEndToEnd(t *testing.T) {
 					tt.Fatalf("expecting to find file %q but it was not found", originalName)
 				}
 
-				if originalValue != currentFile {
-					tt.Fatalf(
-						"on file %q, expecting to get %d bytes of data, and got %d: files are different\n%s\n%s",
-						originalName, len(originalValue), len(currentFile), originalValue, currentFile,
-					)
-				}
+				require.Equalf(tt, string(originalValue), currentFile, "on file %q", originalName)
 			}
 		})
 	}

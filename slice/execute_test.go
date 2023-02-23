@@ -1,13 +1,16 @@
 package slice
 
 import (
-	"log"
 	"os"
+	"path/filepath"
 	"testing"
 	"text/template"
+
+	local "github.com/patrickdappollonio/kubectl-slice/slice/template"
+	"github.com/stretchr/testify/require"
 )
 
-func TestSplit_processSingleFile(t *testing.T) {
+func TestExecute_processSingleFile(t *testing.T) {
 	tests := []struct {
 		name          string
 		fields        Options
@@ -32,6 +35,15 @@ metadata:
 					Kind:       "Pod",
 					Name:       "nginx-ingress",
 				},
+			},
+		},
+		// ----------------------------------------------------------------
+		{
+			name:      "empty file",
+			fields:    Options{},
+			fileInput: `---`,
+			fileOutput: &yamlFile{
+				filename: "-.yaml",
 			},
 		},
 		// ----------------------------------------------------------------
@@ -98,7 +110,6 @@ metadata:
 `,
 			fileOutput: &yamlFile{
 				filename: "-.yaml",
-				meta:     kubeObjectMeta{},
 			},
 		},
 		// ----------------------------------------------------------------
@@ -169,52 +180,60 @@ kind: "Namespace
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Split{
-				opts:     tt.fields,
-				log:      log.New(os.Stderr, "", log.LstdFlags),
-				template: template.Must(template.New("split").Funcs(templateFuncs).Parse(DefaultTemplateName)),
+				opts:      tt.fields,
+				log:       nolog,
+				template:  template.Must(template.New("split").Funcs(local.Functions).Parse(DefaultTemplateName)),
+				fileCount: 1,
 			}
 
-			if err := s.validateFilters(); (err != nil) != tt.wantFilterErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantFilterErr)
-			}
+			requireErrorIf(t, tt.wantFilterErr, s.validateFilters())
+			requireErrorIf(t, tt.wantErr, s.processSingleFile([]byte(tt.fileInput)))
 
-			if err := s.processSingleFile([]byte(tt.fileInput)); (err != nil) != tt.wantErr {
-				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
-			}
+			if tt.fileOutput != nil {
+				require.Lenf(t, s.filesFound, 1, "expected 1 file from list, got %d", len(s.filesFound))
 
-			expectingFile := tt.fileOutput != nil
-
-			if expectingFile && len(s.filesFound) != 1 {
-				t.Errorf("expected 1 file from list, got %d", len(s.filesFound))
-			}
-
-			if expectingFile {
 				current := s.filesFound[0]
-
-				if current.filename != tt.fileOutput.filename {
-					t.Errorf("expected filename %s, got %s", tt.fileOutput.filename, current.filename)
-				}
-
-				if current.meta.APIVersion != tt.fileOutput.meta.APIVersion {
-					t.Errorf("expected apiVersion %s, got %s", tt.fileOutput.meta.APIVersion, current.meta.APIVersion)
-				}
-
-				if current.meta.Kind != tt.fileOutput.meta.Kind {
-					t.Errorf("expected kind %s, got %s", tt.fileOutput.meta.Kind, current.meta.Kind)
-				}
-
-				if current.meta.Name != tt.fileOutput.meta.Name {
-					t.Errorf("expected name %s, got %s", tt.fileOutput.meta.Name, current.meta.Name)
-				}
-
-				if current.meta.Namespace != tt.fileOutput.meta.Namespace {
-					t.Errorf("expected namespace %s, got %s", tt.fileOutput.meta.Namespace, current.meta.Namespace)
-				}
+				require.Equal(t, tt.fileOutput.filename, current.filename)
+				require.Equal(t, tt.fileOutput.meta.APIVersion, current.meta.APIVersion)
+				require.Equal(t, tt.fileOutput.meta.Kind, current.meta.Kind)
+				require.Equal(t, tt.fileOutput.meta.Name, current.meta.Name)
+				require.Equal(t, tt.fileOutput.meta.Namespace, current.meta.Namespace)
 			} else {
-				if len(s.filesFound) != 0 {
-					t.Errorf("expected 0 files from list, got %d: %s", len(s.filesFound), s.filesFound[0].filename)
-				}
+				require.Lenf(t, s.filesFound, 0, "expected 0 files from list, got %d", len(s.filesFound))
 			}
 		})
 	}
+}
+
+func TestExecute_writeToFileCases(t *testing.T) {
+	tempdir := t.TempDir()
+	s := &Split{log: nolog}
+
+	t.Run("write new file", func(tt *testing.T) {
+		require.NoError(tt, s.writeToFile(filepath.Join(tempdir, "test.txt"), []byte("test")))
+		content, err := os.ReadFile(filepath.Join(tempdir, "test.txt"))
+		require.NoError(tt, err)
+		require.Equal(tt, "test\n", string(content))
+	})
+
+	t.Run("truncate existent file", func(tt *testing.T) {
+		preexistent := filepath.Join(tempdir, "test_no_newline.txt")
+
+		require.NoError(tt, os.WriteFile(preexistent, []byte("foobarbaz"), 0644))
+		require.NoError(tt, s.writeToFile(preexistent, []byte("test")))
+
+		content, err := os.ReadFile(preexistent)
+		require.NoError(tt, err)
+		require.Equal(tt, "test\n", string(content))
+	})
+
+	t.Run("attempt writing to a read only directory", func(tt *testing.T) {
+		require.NoError(tt, os.MkdirAll(filepath.Join(tempdir, "readonly"), 0444))
+		require.Error(tt, s.writeToFile(filepath.Join(tempdir, "readonly", "test.txt"), []byte("test")))
+	})
+
+	t.Run("attempt writing to a read only sub-directory", func(tt *testing.T) {
+		require.NoError(tt, os.MkdirAll(filepath.Join(tempdir, "readonly_sub"), 0444))
+		require.Error(tt, s.writeToFile(filepath.Join(tempdir, "readonly_sub", "readonly", "test.txt"), []byte("test")))
+	})
 }

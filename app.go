@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/muesli/coral"
 	"github.com/patrickdappollonio/kubectl-slice/slice"
+	"github.com/spf13/cobra"
 )
 
 var version = "development"
@@ -40,10 +40,10 @@ func generateExamples([]string) string {
 	return s.String()
 }
 
-func root() *coral.Command {
+func root() *cobra.Command {
 	opts := slice.Options{}
 
-	rootCommand := &coral.Command{
+	rootCommand := &cobra.Command{
 		Use:           "kubectl-slice",
 		Short:         helpShort,
 		Long:          helpLong,
@@ -51,7 +51,7 @@ func root() *coral.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Example:       generateExamples(examples),
-		RunE: func(cmd *coral.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bind to the appropriate stdout/stderr
 			opts.Stdout = cmd.OutOrStdout()
 			opts.Stderr = cmd.ErrOrStderr()
@@ -88,7 +88,6 @@ func root() *coral.Command {
 	rootCommand.Flags().BoolVar(&opts.SortByKind, "sort-by-kind", false, "if enabled, resources are sorted by Kind, a la Helm, before saving them to disk")
 	rootCommand.Flags().BoolVar(&opts.OutputToStdout, "stdout", false, "if enabled, no resource is written to disk and all resources are printed to stdout instead")
 
-	rootCommand.Flags().MarkHidden("debug")
-
+	_ = rootCommand.Flags().MarkHidden("debug")
 	return rootCommand
 }

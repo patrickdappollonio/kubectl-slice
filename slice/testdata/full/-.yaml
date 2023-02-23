@@ -1,0 +1,12 @@
+# foo
+---
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: hello-docker
+#   labels:
+#     app: hello-docker-app
+# spec:
+#   containers:
+#   - name: hello-docker-container
+#     image: patrickdappollonio/hello-docker

@@ -1,0 +1,11 @@
+# File: pod-nginx-ingress.yaml (56 bytes)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-ingress
+---
+# File: namespace-production.yaml (59 bytes)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production

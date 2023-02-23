@@ -33,9 +33,6 @@ func (s *Split) processSingleFile(file []byte) error {
 		return nil
 	}
 
-	// Add an empty line at the end
-	file = append(file, []byte("\n\n")...)
-
 	// Send it for processing
 	meta, err := s.parseYAMLManifest(file)
 	if err != nil {
@@ -71,7 +68,7 @@ func (s *Split) processSingleFile(file []byte) error {
 		})
 	} else {
 		s.log.Printf("Got existent file. Appending to original buffer: %s", meta.filename)
-		existentData = append(existentData, []byte("---\n\n")...)
+		existentData = append(existentData, []byte("\n---\n")...)
 		existentData = append(existentData, file...)
 		s.filesFound[position] = yamlFile{
 			filename: meta.filename,
@@ -117,7 +114,7 @@ func (s *Split) scan() error {
 			// If we reached the end of file, handle up to this point
 			if err == io.EOF {
 				s.log.Println("Reached end of file while parsing. Sending remaining buffer to process.")
-				fmt.Fprint(&local, line)
+				local.WriteString(line)
 
 				if err := parseFile(); err != nil {
 					return err
@@ -171,16 +168,16 @@ func (s *Split) store() error {
 
 		switch {
 		case s.opts.DryRun:
-			fmt.Fprintf(s.opts.Stderr, "Would write %s -- %d bytes.\n", fullpath, fileLength)
+			s.WriteStderr("Would write %s -- %d bytes.", fullpath, fileLength)
 			continue
 
 		case s.opts.OutputToStdout:
 			if s.fileCount != 1 {
-				fmt.Fprintf(s.opts.Stdout, "---\n\n")
+				s.WriteStdout("---")
 			}
 
-			fmt.Fprintf(s.opts.Stdout, "# File: %s (%d bytes)\n", fullpath, fileLength)
-			fmt.Fprintf(s.opts.Stdout, "%s\n", v.data)
+			s.WriteStdout("# File: %s (%d bytes)", fullpath, fileLength)
+			s.WriteStdout("%s", v.data)
 			continue
 
 		default:
@@ -189,24 +186,20 @@ func (s *Split) store() error {
 				return err
 			}
 
-			if !s.opts.Quiet {
-				fmt.Fprintf(s.opts.Stderr, "Wrote %s -- %d bytes.\n", fullpath, fileLength)
-			}
+			s.WriteStderr("Wrote %s -- %d bytes.", fullpath, fileLength)
 			continue
 		}
 	}
 
 	switch {
 	case s.opts.DryRun:
-		fmt.Fprintf(s.opts.Stderr, "%d %s generated (dry-run)\n", s.fileCount, pluralize("file", s.fileCount))
+		s.WriteStderr("%d %s generated (dry-run)", s.fileCount, pluralize("file", s.fileCount))
 
 	case s.opts.OutputToStdout:
-		fmt.Fprintf(s.opts.Stderr, "%d %s parsed to stdout.\n", s.fileCount, pluralize("file", s.fileCount))
+		s.WriteStderr("%d %s parsed to stdout.", s.fileCount, pluralize("file", s.fileCount))
 
 	default:
-		if !s.opts.Quiet {
-			fmt.Fprintf(s.opts.Stderr, "%d %s generated.\n", s.fileCount, pluralize("file", s.fileCount))
-		}
+		s.WriteStderr("%d %s generated.", s.fileCount, pluralize("file", s.fileCount))
 	}
 
 	return nil
@@ -239,15 +232,22 @@ func (s *Split) writeToFile(path string, data []byte) error {
 
 	// Open the file as read/write, create the file if it doesn't exist, and if
 	// it does, truncate it.
-	s.log.Printf("Opening file path %q", path)
+	s.log.Printf("Opening file path %q for writing", path)
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultChmod)
 	if err != nil {
 		return fmt.Errorf("unable to create/open file %q: %w", path, err)
 	}
 
-	// Write the contents from the buffer
+	defer f.Close()
+
+	// Check if the last character is a newline, and if not, add one
+	if !bytes.HasSuffix(data, []byte{'\n'}) {
+		s.log.Printf("Adding new line to end of contents (content did not end on a line break)")
+		data = append(data, '\n')
+	}
+
+	// Write the entire file buffer back to the file in disk
 	if _, err := f.Write(data); err != nil {
-		f.Close()
 		return fmt.Errorf("unable to write file contents for file %q: %w", path, err)
 	}
 

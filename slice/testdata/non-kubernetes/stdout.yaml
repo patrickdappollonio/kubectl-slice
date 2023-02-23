@@ -1,0 +1,7 @@
+# File: foo-.yaml (28 bytes)
+kind: foo
+name: bar
+age: baz
+---
+# File: -.yaml (13 bytes)
+another: file

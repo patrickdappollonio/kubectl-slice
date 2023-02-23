@@ -33,7 +33,7 @@ spec:
         matchLabels:
           os: linux
           arch: arm
-      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_linux_armv6.tar.gz" .TagName | indent 6 }}
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_linux_arm.tar.gz" .TagName | indent 6 }}
       bin: kubectl-slice
     - selector:
         matchLabels:
@@ -46,4 +46,16 @@ spec:
           os: windows
           arch: amd64
       {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_windows_x86_64.tar.gz" .TagName | indent 6 }}
+      bin: kubectl-slice.exe
+    - selector:
+        matchLabels:
+          os: windows
+          arch: arm
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_windows_windows_arm.tar.gz" .TagName | indent 6 }}
+      bin: kubectl-slice.exe
+    - selector:
+        matchLabels:
+          os: windows
+          arch: arm64
+      {{addURIAndSha "https://github.com/patrickdappollonio/kubectl-slice/releases/download/v{{ slice .TagName 1 }}/kubectl-slice_windows_windows_arm64.tar.gz" .TagName | indent 6 }}
       bin: kubectl-slice.exe

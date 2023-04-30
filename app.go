@@ -28,6 +28,7 @@ var examples = []string{
 	"kubectl-slice -f foo.yaml --exclude-name *-svc --stdout",
 	"kubectl-slice -f foo.yaml --include Pod/* --stdout",
 	"kubectl-slice -f foo.yaml --exclude deployment/kube* --stdout",
+	"kubectl-slice --config config.yaml",
 }
 
 func generateExamples([]string) string {

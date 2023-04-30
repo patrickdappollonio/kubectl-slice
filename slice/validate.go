@@ -18,11 +18,11 @@ func (s *Split) init() error {
 
 	if s.opts.OutputToStdout {
 		if s.opts.OutputDirectory != "" {
-			return fmt.Errorf("cannot specify both output to stdout and output to file: output directory is present")
+			return fmt.Errorf("cannot specify both output to stdout and output to file: output directory flag is set")
 		}
 	} else {
 		if s.opts.OutputDirectory == "" {
-			return fmt.Errorf("output directory is empty")
+			return fmt.Errorf("output directory flag is empty or not set")
 		}
 	}
 

@@ -174,20 +174,20 @@ func bindCobraAndViper(cmd *cobra.Command, configFileLocation string) error {
 			switch val := v.Get(nameUnderscored).(type) {
 
 			case string:
-				cmd.Flags().Set(flag.Name, val)
+				_ = cmd.Flags().Set(flag.Name, val)
 
 			case []interface{}:
 				var stringified []string
 				for _, v := range val {
 					stringified = append(stringified, fmt.Sprintf("%v", v))
 				}
-				cmd.Flags().Set(flag.Name, strings.Join(stringified, ","))
+				_ = cmd.Flags().Set(flag.Name, strings.Join(stringified, ","))
 
 			case bool:
-				cmd.Flags().Set(flag.Name, fmt.Sprintf("%t", val))
+				_ = cmd.Flags().Set(flag.Name, fmt.Sprintf("%t", val))
 
 			case int:
-				cmd.Flags().Set(flag.Name, fmt.Sprintf("%d", val))
+				_ = cmd.Flags().Set(flag.Name, fmt.Sprintf("%d", val))
 
 			default:
 				err = fmt.Errorf("unsupported type %T for flag %q", val, nameUnderscored)

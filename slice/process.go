@@ -57,12 +57,12 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 	s.log.Printf("Kubernetes metadata found -> %#v", k8smeta)
 
 	// Check if we have a Kubernetes kind and we're requesting inclusion or exclusion
-	if k8smeta.Kind == "" && (hasIncluded || hasExcluded) {
+	if k8smeta.Kind == "" && !s.opts.AllowEmptyKinds && (hasIncluded || hasExcluded) {
 		return yamlFile{}, fmt.Errorf("unable to find Kubernetes \"kind\" field in file number %d", s.fileCount)
 	}
 
 	// Check if we have a Kubernetes name and we're requesting inclusion or exclusion
-	if k8smeta.Name == "" && (hasIncluded || hasExcluded) {
+	if k8smeta.Name == "" && !s.opts.AllowEmptyNames && (hasIncluded || hasExcluded) {
 		return yamlFile{}, fmt.Errorf("unable to find Kubernetes \"metadata.name\" field in file number %d", s.fileCount)
 	}
 

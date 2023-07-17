@@ -34,6 +34,22 @@ func (s *Split) init() error {
 }
 
 func (s *Split) validateFilters() error {
+	if len(s.opts.IncludedKinds) > 0 && s.opts.AllowEmptyKinds {
+		return fmt.Errorf("cannot specify both included kinds and allow empty kinds")
+	}
+
+	if len(s.opts.ExcludedKinds) > 0 && s.opts.AllowEmptyKinds {
+		return fmt.Errorf("cannot specify both excluded kinds and allow empty kinds")
+	}
+
+	if len(s.opts.IncludedNames) > 0 && s.opts.AllowEmptyNames {
+		return fmt.Errorf("cannot specify both included names and allow empty names")
+	}
+
+	if len(s.opts.ExcludedNames) > 0 && s.opts.AllowEmptyNames {
+		return fmt.Errorf("cannot specify both excluded names and allow empty names")
+	}
+
 	if len(s.opts.IncludedKinds) > 0 && len(s.opts.ExcludedKinds) > 0 {
 		return fmt.Errorf("cannot specify both included and excluded kinds")
 	}

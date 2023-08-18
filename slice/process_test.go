@@ -347,3 +347,118 @@ kind: Foo
 		})
 	}
 }
+
+func TestSplit_parseYamlManifestAllowingEmpties(t *testing.T) {
+	tests := []struct {
+		name          string
+		contents      []byte
+		skipEmptyName bool
+		skipEmptyKind bool
+		includeKind   string
+		includeName   string
+		want          yamlFile
+		wantErr       bool
+	}{
+		{
+			name: "include name and kind",
+			contents: []byte(`---
+apiVersion: v1
+kind: Foo
+metadata:
+  name: bar
+`),
+			want: yamlFile{
+				filename: "foo-bar.yaml",
+				meta:     kubeObjectMeta{APIVersion: "v1", Kind: "Foo", Name: "bar"},
+			},
+			includeKind:   "Foo",
+			skipEmptyName: false,
+			skipEmptyKind: false,
+		},
+		{
+			name: "allow empty kind",
+			contents: []byte(`---
+apiVersion: v1
+kind: ""
+metadata:
+  name: bar
+`),
+			want: yamlFile{
+				filename: "-bar.yaml",
+				meta:     kubeObjectMeta{APIVersion: "v1", Kind: "", Name: "bar"},
+			},
+			includeName:   "bar",
+			skipEmptyName: false,
+			skipEmptyKind: true,
+		},
+		{
+			name: "dont allow empty kind",
+			contents: []byte(`---
+apiVersion: v1
+metadata:
+  name: bar
+`),
+			wantErr:       true,
+			includeName:   "bar",
+			skipEmptyName: false,
+			skipEmptyKind: false,
+		},
+		{
+			name: "allow empty name",
+			contents: []byte(`---
+apiVersion: v1
+kind: Foo
+metadata:
+  name: ""
+`),
+			want: yamlFile{
+				filename: "foo-.yaml",
+				meta:     kubeObjectMeta{APIVersion: "v1", Kind: "Foo", Name: ""},
+			},
+			includeKind:   "Foo",
+			skipEmptyName: true,
+			skipEmptyKind: false,
+		},
+		{
+			name: "dont allow empty name",
+			contents: []byte(`---
+apiVersion: v1
+kind: Foo
+`),
+			wantErr:       true,
+			includeKind:   "Foo",
+			skipEmptyName: false,
+			skipEmptyKind: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			s := &Split{
+				log:      nolog,
+				template: template.Must(template.New(DefaultTemplateName).Funcs(local.Functions).Parse(DefaultTemplateName)),
+			}
+
+			if len(tt.includeKind) > 0 {
+				s.opts.IncludedKinds = []string{tt.includeKind}
+			}
+
+			if len(tt.includeName) > 0 {
+				s.opts.IncludedNames = []string{tt.includeName}
+			}
+
+			s.opts.AllowEmptyKinds = tt.skipEmptyKind
+			s.opts.AllowEmptyNames = tt.skipEmptyName
+
+			if err := s.validateFilters(); err != nil {
+				t.Fatalf("not expecting error validating filters, got: %s", err)
+			}
+
+			got, err := s.parseYAMLManifest(tt.contents)
+			requireErrorIf(t, tt.wantErr, err)
+			t.Logf("got: %#v", got)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}

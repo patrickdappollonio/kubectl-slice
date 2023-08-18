@@ -110,6 +110,8 @@ func root() *cobra.Command {
 	rootCommand.Flags().BoolVar(&opts.SortByKind, "sort-by-kind", false, "if enabled, resources are sorted by Kind, a la Helm, before saving them to disk")
 	rootCommand.Flags().BoolVar(&opts.OutputToStdout, "stdout", false, "if enabled, no resource is written to disk and all resources are printed to stdout instead")
 	rootCommand.Flags().StringVarP(&configFile, "config", "c", "", "path to the config file")
+	rootCommand.Flags().BoolVar(&opts.AllowEmptyKinds, "allow-empty-kinds", false, "if enabled, resources with empty kinds don't produce an error when filtering")
+	rootCommand.Flags().BoolVar(&opts.AllowEmptyNames, "allow-empty-names", false, "if enabled, resources with empty names don't produce an error when filtering")
 
 	_ = rootCommand.Flags().MarkHidden("debug")
 	return rootCommand

@@ -80,4 +80,7 @@ type Options struct {
 	StrictKubernetes bool // if true, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded
 
 	SortByKind bool // if true, it will sort the resources by kind
+
+	AllowEmptyNames bool
+	AllowEmptyKinds bool
 }

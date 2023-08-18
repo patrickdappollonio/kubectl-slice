@@ -34,20 +34,20 @@ For example, the `--input-file` flag becomes `input_file:` in the configuration 
 The following is an example of a configuration file with the types defined:
 
 ```yaml
-input-file: string
-output-dir: string
+input_file: string
+output_dir: string
 template: string
-dry-run: boolean
+dry_run: boolean
 debug: boolean
 quiet: boolean
-include-kind: [string]
-exclude-kind: [string]
-include-name: [string]
-exclude-name: [string]
+include_kind: [string]
+exclude_kind: [string]
+include_name: [string]
+exclude_name: [string]
 include: [string]
 exclude: [string]
-skip-non-k8s: bool
-sort-by-kind: bool
+skip_non_k8s: bool
+sort_by_kind: bool
 stdout: bool
 ```
 

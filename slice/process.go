@@ -58,12 +58,12 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 
 	// Check if we have a Kubernetes kind and we're requesting inclusion or exclusion
 	if k8smeta.Kind == "" && !s.opts.AllowEmptyKinds && (hasIncluded || hasExcluded) {
-		return yamlFile{}, fmt.Errorf("unable to find Kubernetes \"kind\" field in file number %d", s.fileCount)
+		return yamlFile{}, &cantFindFieldErr{fieldName: "kind", fileCount: s.fileCount, meta: k8smeta}
 	}
 
 	// Check if we have a Kubernetes name and we're requesting inclusion or exclusion
 	if k8smeta.Name == "" && !s.opts.AllowEmptyNames && (hasIncluded || hasExcluded) {
-		return yamlFile{}, fmt.Errorf("unable to find Kubernetes \"metadata.name\" field in file number %d", s.fileCount)
+		return yamlFile{}, &cantFindFieldErr{fieldName: "metadata.name", fileCount: s.fileCount, meta: k8smeta}
 	}
 
 	// We need to check if the file should be skipped

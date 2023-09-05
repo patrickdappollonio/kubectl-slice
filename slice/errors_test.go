@@ -9,6 +9,7 @@ import (
 func TestErrorsInterface(t *testing.T) {
 	require.Implementsf(t, (*error)(nil), &strictModeSkipErr{}, "strictModeSkipErr should implement error")
 	require.Implementsf(t, (*error)(nil), &skipErr{}, "skipErr should implement error")
+	require.Implementsf(t, (*error)(nil), &cantFindFieldErr{}, "cantFindFieldErr should implement error")
 }
 
 func requireErrorIf(t *testing.T, wantErr bool, err error) {

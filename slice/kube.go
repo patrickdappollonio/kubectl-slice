@@ -15,6 +15,10 @@ type kubeObjectMeta struct {
 	Namespace  string
 }
 
+func (k kubeObjectMeta) empty() bool {
+	return k.APIVersion == "" && k.Kind == "" && k.Name == "" && k.Namespace == ""
+}
+
 // from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#LL31-L67C2
 var helmInstallOrder = []string{
 	"Namespace",

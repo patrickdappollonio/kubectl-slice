@@ -4,9 +4,9 @@ go 1.20
 
 require (
 	github.com/mb0/glob v0.0.0-20160210091149-1eb79d2de6c4
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.18.1
+	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v3 v3.0.1

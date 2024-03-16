@@ -63,13 +63,14 @@ type Options struct {
 	Stdout io.Writer
 	Stderr io.Writer
 
-	InputFile       string // the name of the input file to be read
-	OutputDirectory string // the path to the directory where the files will be stored
-	OutputToStdout  bool   // if true, the output will be written to stdout instead of a file
-	GoTemplate      string // the go template code to render the file names
-	DryRun          bool   // if true, no files are created
-	DebugMode       bool   // enables debug mode
-	Quiet           bool   // disables all writing to stdout/stderr
+	InputFile         string // the name of the input file to be read
+	OutputDirectory   string // the path to the directory where the files will be stored
+	OutputToStdout    bool   // if true, the output will be written to stdout instead of a file
+	GoTemplate        string // the go template code to render the file names
+	DryRun            bool   // if true, no files are created
+	DebugMode         bool   // enables debug mode
+	Quiet             bool   // disables all writing to stdout/stderr
+	IncludeTripleDash bool   // include the "---" separator on resources sliced
 
 	IncludedKinds    []string
 	ExcludedKinds    []string

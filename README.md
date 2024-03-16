@@ -89,6 +89,8 @@ Examples:
   kubectl-slice --config config.yaml
 
 Flags:
+      --allow-empty-kinds      if enabled, resources with empty kinds don't produce an error when filtering
+      --allow-empty-names      if enabled, resources with empty names don't produce an error when filtering
   -c, --config string          path to the config file
       --dry-run                if true, no files are created, but the potentially generated files will be printed as the command output
       --exclude strings        resource name to exclude in the output (format <kind>/<name>, case insensitive, glob supported)
@@ -98,6 +100,7 @@ Flags:
       --include strings        resource name to include in the output (format <kind>/<name>, case insensitive, glob supported)
       --include-kind strings   resource kind to include in the output (singular, case insensitive, glob supported)
       --include-name strings   resource name to include in the output (singular, case insensitive, glob supported)
+      --include-triple-dash    if enabled, the typical "---" YAML separator is included at the beginning of resources sliced
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
   -o, --output-dir string      the output directory used to output the splitted files
   -q, --quiet                  if true, no output is written to stdout/err

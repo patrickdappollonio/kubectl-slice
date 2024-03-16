@@ -181,12 +181,22 @@ func (s *Split) store() error {
 			continue
 
 		default:
+			local := make([]byte, 0, len(v.data)+4)
+
+			// If the user wants to include the triple dash, add it
+			// at the beginning of the file
+			if s.opts.IncludeTripleDash && !bytes.Equal(v.data, []byte("---")) {
+				local = append([]byte("---\n"), v.data...)
+			} else {
+				local = append(local, v.data...)
+			}
+
 			// do nothing, handling below
-			if err := s.writeToFile(fullpath, v.data); err != nil {
+			if err := s.writeToFile(fullpath, local); err != nil {
 				return err
 			}
 
-			s.WriteStderr("Wrote %s -- %d bytes.", fullpath, fileLength)
+			s.WriteStderr("Wrote %s -- %d bytes.", fullpath, len(local))
 			continue
 		}
 	}

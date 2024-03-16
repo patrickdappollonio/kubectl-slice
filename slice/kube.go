@@ -1,6 +1,8 @@
 package slice
 
-import "sort"
+import (
+	"sort"
+)
 
 type yamlFile struct {
 	filename string
@@ -68,7 +70,7 @@ func sortYAMLsByKind(manifests []yamlFile) []yamlFile {
 }
 
 // from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#L133-L158
-func lessByKind(a interface{}, b interface{}, kindA string, kindB string, o []string) bool {
+func lessByKind(_ interface{}, _ interface{}, kindA string, kindB string, o []string) bool {
 	ordering := make(map[string]int, len(o))
 	for v, k := range o {
 		ordering[k] = v

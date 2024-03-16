@@ -1,6 +1,7 @@
 package slice
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -179,6 +180,8 @@ kind: "Namespace
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			s := &Split{
 				opts:      tt.fields,
 				log:       nolog,
@@ -210,6 +213,7 @@ func TestExecute_writeToFileCases(t *testing.T) {
 	s := &Split{log: nolog}
 
 	t.Run("write new file", func(tt *testing.T) {
+		t.Parallel()
 		require.NoError(tt, s.writeToFile(filepath.Join(tempdir, "test.txt"), []byte("test")))
 		content, err := os.ReadFile(filepath.Join(tempdir, "test.txt"))
 		require.NoError(tt, err)
@@ -236,4 +240,108 @@ func TestExecute_writeToFileCases(t *testing.T) {
 		require.NoError(tt, os.MkdirAll(filepath.Join(tempdir, "readonly_sub"), 0444))
 		require.Error(tt, s.writeToFile(filepath.Join(tempdir, "readonly_sub", "readonly", "test.txt"), []byte("test")))
 	})
+}
+
+func TestAddingTripleDashes(t *testing.T) {
+	cases := []struct {
+		name          string
+		input         string
+		includeDashes bool
+		output        map[string]string
+	}{
+		{
+			name:   "empty file",
+			input:  `---`,
+			output: map[string]string{"-.yaml": "---\n"},
+		},
+		{
+			name: "simple no dashes",
+			input: `apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-ingress
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production`,
+			output: map[string]string{
+				"pod-nginx-ingress.yaml":    "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-ingress\n",
+				"namespace-production.yaml": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: production\n",
+			},
+		},
+		{
+			name:          "simple with dashes",
+			includeDashes: true,
+			input: `apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-ingress
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production`,
+			output: map[string]string{
+				"pod-nginx-ingress.yaml":    "---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-ingress\n",
+				"namespace-production.yaml": "---\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: production\n",
+			},
+		},
+		{
+			name:          "simple with dashes - adding empty intermediate files",
+			includeDashes: true,
+			input: `apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-ingress
+---
+---
+---
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production`,
+			output: map[string]string{
+				"pod-nginx-ingress.yaml":    "---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-ingress\n",
+				"namespace-production.yaml": "---\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: production\n",
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			tdinput := t.TempDir()
+			tdoutput := t.TempDir()
+			require.NotEqual(t, tdinput, tdoutput, "input and output directories should be different")
+
+			err := os.WriteFile(filepath.Join(tdinput, "input.yaml"), []byte(tt.input), 0644)
+			require.NoError(t, err, "error found while writing input file")
+
+			s, err := New(Options{
+				GoTemplate:        DefaultTemplateName,
+				IncludeTripleDash: tt.includeDashes,
+				InputFile:         filepath.Join(tdinput, "input.yaml"),
+				OutputDirectory:   tdoutput,
+				Stderr:            os.Stderr,
+				Stdout:            io.Discard,
+			})
+			require.NoError(t, err, "error found while creating new Split instance")
+			require.NoError(t, s.Execute(), "error found while executing slice")
+
+			files, err := os.ReadDir(tdoutput)
+			require.NoError(t, err, "error found while reading output directory")
+
+			for _, file := range files {
+				content, err := os.ReadFile(filepath.Join(tdoutput, file.Name()))
+				require.NoError(t, err, "error found while reading file %q", file.Name())
+
+				expected, found := tt.output[file.Name()]
+				require.True(t, found, "expected file %q to be found in the output map", file.Name())
+				require.Equal(t, expected, string(content), "expected content to be equal for file %q", file.Name())
+			}
+		})
+	}
 }

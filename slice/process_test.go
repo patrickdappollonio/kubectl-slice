@@ -55,6 +55,8 @@ func Test_inSliceIgnoreCase(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			if got := inSliceIgnoreCase(tt.args.slice, tt.args.expected); got != tt.want {
 				t.Errorf("inSliceIgnoreCase() = %v, want %v", got, tt.want)
 			}
@@ -117,6 +119,8 @@ func Test_inSliceIgnoreCaseGlob(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			require.Equal(t, tt.want, inSliceIgnoreCaseGlob(tt.args.slice, tt.args.expected))
 		})
 	}
@@ -169,6 +173,7 @@ func Test_checkStringInMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			require.Equal(t, tt.want, checkStringInMap(tt.args.local, tt.args.key))
 		})
 	}
@@ -225,6 +230,7 @@ func Test_checkKubernetesBasics(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			require.Equal(t, tt.want, checkKubernetesBasics(tt.args.manifest))
 		})
 	}
@@ -334,6 +340,7 @@ kind: Foo
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
 			s := &Split{
 				log:      nolog,
@@ -434,6 +441,7 @@ kind: Foo
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
 			s := &Split{
 				log:      nolog,

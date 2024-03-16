@@ -86,7 +86,7 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 	name = strings.NewReplacer("<no value>", "", "\n", "").Replace(name)
 
 	if str := strings.TrimSuffix(name, filepath.Ext(name)); str == "" {
-		return yamlFile{}, fmt.Errorf("file name rendered will yield no file name for YAML file number %d", s.fileCount)
+		return yamlFile{}, fmt.Errorf("file name rendered will yield no file name for YAML file number %d (original name: %q, metadata: %v)", s.fileCount, name, k8smeta)
 	}
 
 	return yamlFile{filename: name, meta: k8smeta}, nil

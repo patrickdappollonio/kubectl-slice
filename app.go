@@ -112,6 +112,7 @@ func root() *cobra.Command {
 	rootCommand.Flags().StringVarP(&configFile, "config", "c", "", "path to the config file")
 	rootCommand.Flags().BoolVar(&opts.AllowEmptyKinds, "allow-empty-kinds", false, "if enabled, resources with empty kinds don't produce an error when filtering")
 	rootCommand.Flags().BoolVar(&opts.AllowEmptyNames, "allow-empty-names", false, "if enabled, resources with empty names don't produce an error when filtering")
+	rootCommand.Flags().BoolVarP(&opts.IncludeTripleDash, "include-triple-dash", "d", false, "if enabled, the typical \"---\" YAML separator is included at the beginning of resources sliced")
 
 	_ = rootCommand.Flags().MarkHidden("debug")
 	return rootCommand

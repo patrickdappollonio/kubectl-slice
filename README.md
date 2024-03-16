@@ -100,7 +100,7 @@ Flags:
       --include strings        resource name to include in the output (format <kind>/<name>, case insensitive, glob supported)
       --include-kind strings   resource kind to include in the output (singular, case insensitive, glob supported)
       --include-name strings   resource name to include in the output (singular, case insensitive, glob supported)
-  -d, --include-triple-dash    if enabled, the typical "---" YAML separator is included at the beginning of resources sliced
+      --include-triple-dash    if enabled, the typical "---" YAML separator is included at the beginning of resources sliced
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
   -o, --output-dir string      the output directory used to output the splitted files
   -q, --quiet                  if true, no output is written to stdout/err

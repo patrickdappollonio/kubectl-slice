@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Split) compileTemplate() error {
-	s.log.Println("About to compile template")
+	s.log.Printf("About to compile template: %q", s.opts.GoTemplate)
 	t, err := template.New("split").Funcs(local.Functions).Parse(s.opts.GoTemplate)
 	if err != nil {
 		return fmt.Errorf("file name template parse failed: %w", improveExecError(err))

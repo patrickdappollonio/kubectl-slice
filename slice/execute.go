@@ -197,7 +197,6 @@ func (s *Split) store() error {
 			}
 
 			s.WriteStderr("Wrote %s -- %d bytes.", fullpath, len(local))
-			local = nil
 			continue
 		}
 	}

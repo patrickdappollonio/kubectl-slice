@@ -155,6 +155,18 @@ func (s *Split) store() error {
 		s.opts.OutputDirectory = "."
 	}
 
+	// If the user wants to prune the output directory, do it
+	if s.opts.PruneOutputDir && !s.opts.OutputToStdout && !s.opts.DryRun {
+		// Check if the directory exists and if it does, prune it
+		if _, err := os.Stat(s.opts.OutputDirectory); !os.IsNotExist(err) {
+			s.log.Printf("Pruning output directory %q", s.opts.OutputDirectory)
+			if err := deleteFolderContents(s.opts.OutputDirectory); err != nil {
+				return fmt.Errorf("unable to prune output directory %q: %w", s.opts.OutputDirectory, err)
+			}
+			s.log.Printf("Output directory %q pruned", s.opts.OutputDirectory)
+		}
+	}
+
 	// Now save those files to disk (or if dry-run is on, print what it would
 	// save). Files will be overwritten.
 	s.fileCount = 0

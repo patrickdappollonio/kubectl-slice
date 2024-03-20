@@ -113,6 +113,7 @@ func root() *cobra.Command {
 	rootCommand.Flags().BoolVar(&opts.AllowEmptyKinds, "allow-empty-kinds", false, "if enabled, resources with empty kinds don't produce an error when filtering")
 	rootCommand.Flags().BoolVar(&opts.AllowEmptyNames, "allow-empty-names", false, "if enabled, resources with empty names don't produce an error when filtering")
 	rootCommand.Flags().BoolVar(&opts.IncludeTripleDash, "include-triple-dash", false, "if enabled, the typical \"---\" YAML separator is included at the beginning of resources sliced")
+	rootCommand.Flags().BoolVar(&opts.PruneOutputDir, "prune", false, "if enabled, the output directory will be pruned before writing the files")
 
 	_ = rootCommand.Flags().MarkHidden("debug")
 	return rootCommand

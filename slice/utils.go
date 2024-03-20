@@ -38,3 +38,24 @@ func openFile(fp string) (*os.File, error) {
 
 	return f, nil
 }
+
+func deleteFolderContents(location string) error {
+	f, err := os.Open(location)
+	if err != nil {
+		return fmt.Errorf("unable to open folder %q: %s", location, err.Error())
+	}
+	defer f.Close()
+
+	names, err := f.Readdirnames(-1)
+	if err != nil {
+		return fmt.Errorf("unable to read folder %q: %s", location, err.Error())
+	}
+
+	for _, name := range names {
+		if err := os.RemoveAll(location + "/" + name); err != nil {
+			return fmt.Errorf("unable to remove %q: %s", name, err.Error())
+		}
+	}
+
+	return nil
+}

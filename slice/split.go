@@ -65,6 +65,7 @@ type Options struct {
 
 	InputFile         string // the name of the input file to be read
 	OutputDirectory   string // the path to the directory where the files will be stored
+	PruneOutputDir    bool   // if true, the output directory will be pruned before writing the files
 	OutputToStdout    bool   // if true, the output will be written to stdout instead of a file
 	GoTemplate        string // the go template code to render the file names
 	DryRun            bool   // if true, no files are created

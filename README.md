@@ -103,6 +103,7 @@ Flags:
       --include-triple-dash    if enabled, the typical "---" YAML separator is included at the beginning of resources sliced
   -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
   -o, --output-dir string      the output directory used to output the splitted files
+      --prune                  if enabled, the output directory will be pruned before writing the files
   -q, --quiet                  if true, no output is written to stdout/err
   -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
       --sort-by-kind           if enabled, resources are sorted by Kind, a la Helm, before saving them to disk

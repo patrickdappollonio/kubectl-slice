@@ -13,7 +13,7 @@ This will split the `ingress-namespace.yaml` file in the directory `${PWD}/slice
 For help use:  
 `docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice -h`
 
-Statements to kubectl-slice can be wrapped in `""` if the commandline escapes unintentionally.  
+Statements to `kubectl-slice` can be wrapped in `""` if the commandline escapes unintentionally.  
 Example:  
 `docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice "-h"`
   

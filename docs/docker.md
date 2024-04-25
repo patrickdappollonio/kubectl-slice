@@ -8,7 +8,7 @@ The container is build to execute the the kubectl-slice tool inline.
 Example:  
 `docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice -f ingress-namespace.yaml -o ./`  
   
-This will split the ingress-namespace.yaml file in the directory ${PWD}/slice/testdata.  
+This will split the `ingress-namespace.yaml` file in the directory `${PWD}/slice/testdata`.  
   
 For help use:  
 `docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice -h`

@@ -1,6 +1,6 @@
 # Running in docker  
   
-Run docker image from gchr.io/patrickdappollonio/kubectl-slice
+Run Docker image from `gchr.io/patrickdappollonio/kubectl-slice`
 
 ## Usage
 The container is build to execute the the kubectl-slice tool inline. 

@@ -3,7 +3,7 @@
 Run Docker image from `gchr.io/patrickdappollonio/kubectl-slice`
 
 ## Usage
-The container is build to execute the the kubectl-slice tool inline. 
+The container is build to execute the the `kubectl-slice` tool inline. 
    
 Example:  
 `docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice -f ingress-namespace.yaml -o ./`  

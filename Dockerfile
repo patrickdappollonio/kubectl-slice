@@ -25,4 +25,4 @@ RUN chown -R k8s:k8s /workdir
 
 USER k8s
 
-ENTRYPOINT ["-c", "/usr/bin/kubectl-slice"]
+CMD ["/bin/sh", "-c"]

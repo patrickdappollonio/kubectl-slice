@@ -1,42 +1,43 @@
 # Running in docker  
   
-Run Docker image from `gchr.io/patrickdappollonio/kubectl-slice`
+Run the Docker image from `gchr.io/patrickdappollonio/kubectl-slice`
 
 ## Usage
-The container is build to execute the the `kubectl-slice` tool inline. 
+The container is build to execute both interactive and inline.  
+
+### Interactive shell
+  
+Example, this will start the container in the `/workdir` directory.
+```sh
+docker run --rm -it \
+gchr.io/patrickdappollonio/kubectl-slice /bin/sh
+```
+  
+### Inline
    
-Example:  
-`docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice -f ingress-namespace.yaml -o ./`  
-  
+**Example 1:**  
 This will split the `ingress-namespace.yaml` file in the directory `${PWD}/slice/testdata`.  
+
+```sh
+docker run --rm -v \
+"${PWD}/slice/testdata":/workdir gchr.io/patrickdappollonio/kubectl-slice \
+kubectl-slice -f ingress-namespace.yaml -o ./
+```
   
-For help use:  
-`docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice -h`
+**Example 2:**  
+To display the `kubectl-slice` help.  
+    
+```sh
+docker run --rm -v \
+"${PWD}/slice/testdata":/workdir gchr.io/patrickdappollonio/kubectl-slice \
+kubectl-slice -h
+```
 
-Statements to `kubectl-slice` can be wrapped in `""` if the commandline escapes unintentionally.  
-Example:  
-`docker run --rm -v "${PWD}/slice/testdata":workdir kubectl-slice "-h"`
+**Example 3:**  
+Statements to `kubectl-slice` can be wrapped in `""` if the commandline escapes unintentionally.   
   
-## Manual build the docker image  
-Requires docker or another OCI tool.  
-
-Follow these steps:  
-1. Clone the repo and cd into the project
-1. Run `docker build . -t kubectl-slice`
-
-## Manual push the docker image  
-A 3rd. party container registry like docker hub is needed to do this.  
-
-1. Run `docker tag kubectl-slice:latest YOUR_REGISTRY.com/ORG/kubectl-slice:1.0`
-1. Run `docker push YOUR_REGISTRY.com/ORG/kubectl-slice:1.0`
-
-## Running arm locally but x86/x64 on the endpoint
-
-Requires buildkit from (moby)[https://github.com/moby/buildkit] installed.  
-
-Example change the dockerfile:  
-`FROM --platform=linux/amd64 golang:1.20.3 as builder`  
-`FROM --platform=linux/amd64 alpine:3.14 as production`  
-  
-Example run direct inline build command instead:  
-`Docker buildx build --platform linux/amd64 . -t kubectl-slice`
+```sh
+docker run --rm -v \
+"${PWD}/slice/testdata":/workdir gchr.io/patrickdappollonio/kubectl-slice \
+kubectl-slice "-h"
+```

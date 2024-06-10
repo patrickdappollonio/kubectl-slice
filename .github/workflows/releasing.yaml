@@ -24,7 +24,7 @@ jobs:
       - name: Test application
         run: go test -v ./...
       - name: Release application to Github
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest

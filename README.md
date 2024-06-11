@@ -13,7 +13,7 @@
   - [Examples](#examples)
   - [Contributing \& Roadmap](#contributing--roadmap)
 
-`kubectl-slice` is a neat tool that allows you to split a single multi-YAML Kubernetes manifest into multiple subfiles using a naming convention you choose. This is done by parsing the YAML code and allowing you to access any key from the YAML object [using Go Templates](https://pkg.go.dev/text/template).
+`kubectl-slice` is a tool that allows you to split a single multi-YAML Kubernetes manifest (with `--input-file` or `-f`), or a folder containing multiple manifests files (with `--input-folder` or `-d`, optionally with `--recursive`), into multiple subfiles using a naming convention you choose. This is done by parsing the YAML code and allowing you to access any key from the YAML object [using Go Templates](https://pkg.go.dev/text/template).
 
 By default, `kubectl-slice` will split your files into multiple subfiles following this naming convention that you can configure to your liking:
 
@@ -86,6 +86,8 @@ Examples:
   kubectl-slice -f foo.yaml --exclude-name *-svc --stdout
   kubectl-slice -f foo.yaml --include Pod/* --stdout
   kubectl-slice -f foo.yaml --exclude deployment/kube* --stdout
+  kubectl-slice -d ./ --recurse -o ./ --include-kind Pod,Namespace
+  kubectl-slice -d ./ --recurse --stdout --include Pod/*
   kubectl-slice --config config.yaml
 
 Flags:
@@ -96,15 +98,18 @@ Flags:
       --exclude strings        resource name to exclude in the output (format <kind>/<name>, case insensitive, glob supported)
       --exclude-kind strings   resource kind to exclude in the output (singular, case insensitive, glob supported)
       --exclude-name strings   resource name to exclude in the output (singular, case insensitive, glob supported)
+      --extensions strings     the extensions to look for in the input folder (default [.yaml,.yml])
   -h, --help                   help for kubectl-slice
       --include strings        resource name to include in the output (format <kind>/<name>, case insensitive, glob supported)
       --include-kind strings   resource kind to include in the output (singular, case insensitive, glob supported)
       --include-name strings   resource name to include in the output (singular, case insensitive, glob supported)
       --include-triple-dash    if enabled, the typical "---" YAML separator is included at the beginning of resources sliced
-  -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used
+  -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used (exclusive with --input-folder)
+  -d, --input-folder string    the input folder used to read the initial macro YAML files (exclusive with --input-file)
   -o, --output-dir string      the output directory used to output the splitted files
       --prune                  if enabled, the output directory will be pruned before writing the files
   -q, --quiet                  if true, no output is written to stdout/err
+  -r, --recurse                if true, the input folder will be read recursively (has no effect unless used with --input-folder)
   -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
       --sort-by-kind           if enabled, resources are sorted by Kind, a la Helm, before saving them to disk
       --stdout                 if enabled, no resource is written to disk and all resources are printed to stdout instead

@@ -28,6 +28,8 @@ var examples = []string{
 	"kubectl-slice -f foo.yaml --exclude-name *-svc --stdout",
 	"kubectl-slice -f foo.yaml --include Pod/* --stdout",
 	"kubectl-slice -f foo.yaml --exclude deployment/kube* --stdout",
+	"kubectl-slice -d ./ --recurse -o ./ --include-kind Pod,Namespace",
+	"kubectl-slice -d ./ --recurse --stdout --include Pod/*",
 	"kubectl-slice --config config.yaml",
 }
 
@@ -68,7 +70,7 @@ func root() *cobra.Command {
 
 			// If no input file has been provided or it's "-", then
 			// point the app to stdin
-			if opts.InputFile == "" || opts.InputFile == "-" {
+			if (opts.InputFile == "" || opts.InputFile == "-") && opts.InputFolder == "" {
 				opts.InputFile = os.Stdin.Name()
 
 				// Check if we're receiving data from the terminal
@@ -94,7 +96,10 @@ func root() *cobra.Command {
 		},
 	}
 
-	rootCommand.Flags().StringVarP(&opts.InputFile, "input-file", "f", "", "the input file used to read the initial macro YAML file; if empty or \"-\", stdin is used")
+	rootCommand.Flags().StringVarP(&opts.InputFile, "input-file", "f", "", "the input file used to read the initial macro YAML file; if empty or \"-\", stdin is used (exclusive with --input-folder)")
+	rootCommand.Flags().StringVarP(&opts.InputFolder, "input-folder", "d", "", "the input folder used to read the initial macro YAML files (exclusive with --input-file)")
+	rootCommand.Flags().StringSliceVar(&opts.InputFolderExt, "extensions", []string{".yaml", ".yml"}, "the extensions to look for in the input folder")
+	rootCommand.Flags().BoolVarP(&opts.Recurse, "recurse", "r", false, "if true, the input folder will be read recursively (has no effect unless used with --input-folder)")
 	rootCommand.Flags().StringVarP(&opts.OutputDirectory, "output-dir", "o", "", "the output directory used to output the splitted files")
 	rootCommand.Flags().StringVarP(&opts.GoTemplate, "template", "t", slice.DefaultTemplateName, "go template used to generate the file name when creating the resource files in the output directory")
 	rootCommand.Flags().BoolVar(&opts.DryRun, "dry-run", false, "if true, no files are created, but the potentially generated files will be printed as the command output")

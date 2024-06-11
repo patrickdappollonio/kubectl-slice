@@ -35,6 +35,9 @@ The following is an example of a configuration file with the types defined:
 
 ```yaml
 input_file: string
+input_dir: string
+extensions: [string]
+recurse: boolean
 output_dir: string
 template: string
 dry_run: boolean

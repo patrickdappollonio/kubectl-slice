@@ -2,6 +2,7 @@
 
 - [Examples](#examples)
   - [Slicing the Tekton manifest](#slicing-the-tekton-manifest)
+  - [Finding all Kubernetes resources of a given kind in multiple YAML files in a folder](#finding-all-kubernetes-resources-of-a-given-kind-in-multiple-yaml-files-in-a-folder)
 
 The following examples demonstrate the capabilities of `kubectl-slice`.
 
@@ -122,4 +123,107 @@ configmap
 └── pipelines-info.yaml
 
 0 directories, 9 files
+```
+
+## Finding all Kubernetes resources of a given kind in multiple YAML files in a folder
+
+Imagine you have a folder with several YAML files. Each file may contain one to many Kubernetes resources. You want to find all resources of a given kind, for example, all `Secret` resources.
+
+As an example, let's clone the ArgoCD repository, which has a nifty `manifests/` folder. Say we want to find all the secrets-type files from the `base` folder in `manifests/base/`, looking at all the YAML files in that folder, we have:
+
+```bash
+$ find ./manifests/base -type f -name "*.yaml"
+./manifests/base/application-controller-roles/argocd-application-controller-role.yaml
+./manifests/base/application-controller-roles/kustomization.yaml
+./manifests/base/application-controller-roles/argocd-application-controller-rolebinding.yaml
+./manifests/base/application-controller-roles/argocd-application-controller-sa.yaml
+./manifests/base/application-controller/kustomization.yaml
+./manifests/base/application-controller/argocd-application-controller-statefulset.yaml
+./manifests/base/application-controller/argocd-metrics.yaml
+./manifests/base/application-controller/argocd-application-controller-network-policy.yaml
+./manifests/base/application-controller-deployment/argocd-application-controller-deployment.yaml
+./manifests/base/application-controller-deployment/argocd-application-controller-service.yaml
+./manifests/base/application-controller-deployment/kustomization.yaml
+./manifests/base/application-controller-deployment/argocd-application-controller-statefulset.yaml
+./manifests/base/config/argocd-cm.yaml
+./manifests/base/config/kustomization.yaml
+./manifests/base/config/argocd-cmd-params-cm.yaml
+./manifests/base/config/argocd-gpg-keys-cm.yaml
+./manifests/base/config/argocd-tls-certs-cm.yaml
+./manifests/base/config/argocd-ssh-known-hosts-cm.yaml
+./manifests/base/config/argocd-rbac-cm.yaml
+./manifests/base/config/argocd-secret.yaml
+./manifests/base/redis/argocd-redis-service.yaml
+./manifests/base/redis/kustomization.yaml
+./manifests/base/redis/argocd-redis-role.yaml
+./manifests/base/redis/argocd-redis-deployment.yaml
+./manifests/base/redis/argocd-redis-rolebinding.yaml
+./manifests/base/redis/argocd-redis-sa.yaml
+./manifests/base/redis/argocd-redis-network-policy.yaml
+./manifests/base/notification/argocd-notifications-controller-network-policy.yaml
+./manifests/base/notification/kustomization.yaml
+./manifests/base/notification/argocd-notifications-controller-rolebinding.yaml
+./manifests/base/notification/argocd-notifications-controller-sa.yaml
+./manifests/base/notification/argocd-notifications-controller-metrics-service.yaml
+./manifests/base/notification/argocd-notifications-cm.yaml
+./manifests/base/notification/argocd-notifications-controller-deployment.yaml
+./manifests/base/notification/argocd-notifications-secret.yaml
+./manifests/base/notification/argocd-notifications-controller-role.yaml
+./manifests/base/repo-server/argocd-repo-server-network-policy.yaml
+./manifests/base/repo-server/argocd-repo-server-service.yaml
+./manifests/base/repo-server/argocd-repo-server-deployment.yaml
+./manifests/base/repo-server/kustomization.yaml
+./manifests/base/repo-server/argocd-repo-server-sa.yaml
+./manifests/base/kustomization.yaml
+./manifests/base/server/argocd-server-rolebinding.yaml
+./manifests/base/server/kustomization.yaml
+./manifests/base/server/argocd-server-network-policy.yaml
+./manifests/base/server/argocd-server-role.yaml
+./manifests/base/server/argocd-server-deployment.yaml
+./manifests/base/server/argocd-server-metrics.yaml
+./manifests/base/server/argocd-server-sa.yaml
+./manifests/base/server/argocd-server-service.yaml
+./manifests/base/dex/argocd-dex-server-rolebinding.yaml
+./manifests/base/dex/argocd-dex-server-service.yaml
+./manifests/base/dex/kustomization.yaml
+./manifests/base/dex/argocd-dex-server-network-policy.yaml
+./manifests/base/dex/argocd-dex-server-sa.yaml
+./manifests/base/dex/argocd-dex-server-deployment.yaml
+./manifests/base/dex/argocd-dex-server-role.yaml
+./manifests/base/applicationset-controller/argocd-applicationset-controller-role.yaml
+./manifests/base/applicationset-controller/argocd-applicationset-controller-rolebinding.yaml
+./manifests/base/applicationset-controller/argocd-applicationset-controller-deployment.yaml
+./manifests/base/applicationset-controller/kustomization.yaml
+./manifests/base/applicationset-controller/argocd-applicationset-controller-service.yaml
+./manifests/base/applicationset-controller/argocd-applicationset-controller-network-policy.yaml
+./manifests/base/applicationset-controller/argocd-applicationset-controller-sa.yaml
+```
+
+It would be time-consuming to try to process them manually.
+
+Let's ask `kubectl-slice` to get us only the `Secrets`. Since there are some `kustomize` files in there, we'll exclude those, which fit the criteria for `--skip-non-k8s` since they don't have a `metadata.name` field. Let's print those to `stdout` as well:
+
+```bash
+$ kubectl-slice -d ./manifests/base --recurse --include-kind Secret --skip-non-k8s --stdout
+# File: secret-argocd-secret.yaml (162 bytes)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-secret
+  labels:
+    app.kubernetes.io/name: argocd-secret
+    app.kubernetes.io/part-of: argocd
+type: Opaque
+---
+# File: secret-argocd-notifications-secret.yaml (252 bytes)
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/component: notifications-controller
+    app.kubernetes.io/name: argocd-notifications-controller
+    app.kubernetes.io/part-of: argocd
+  name: argocd-notifications-secret
+type: Opaque
+2 files parsed to stdout.
 ```

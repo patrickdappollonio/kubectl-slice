@@ -63,15 +63,18 @@ type Options struct {
 	Stdout io.Writer
 	Stderr io.Writer
 
-	InputFile         string // the name of the input file to be read
-	OutputDirectory   string // the path to the directory where the files will be stored
-	PruneOutputDir    bool   // if true, the output directory will be pruned before writing the files
-	OutputToStdout    bool   // if true, the output will be written to stdout instead of a file
-	GoTemplate        string // the go template code to render the file names
-	DryRun            bool   // if true, no files are created
-	DebugMode         bool   // enables debug mode
-	Quiet             bool   // disables all writing to stdout/stderr
-	IncludeTripleDash bool   // include the "---" separator on resources sliced
+	InputFile         string   // the name of the input file to be read
+	InputFolder       string   // the name of the input folder to be read
+	InputFolderExt    []string // the extensions of the files to be read
+	Recurse           bool     // if true, the input folder will be read recursively
+	OutputDirectory   string   // the path to the directory where the files will be stored
+	PruneOutputDir    bool     // if true, the output directory will be pruned before writing the files
+	OutputToStdout    bool     // if true, the output will be written to stdout instead of a file
+	GoTemplate        string   // the go template code to render the file names
+	DryRun            bool     // if true, no files are created
+	DebugMode         bool     // enables debug mode
+	Quiet             bool     // disables all writing to stdout/stderr
+	IncludeTripleDash bool     // include the "---" separator on resources sliced
 
 	IncludedKinds    []string
 	ExcludedKinds    []string

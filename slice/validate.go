@@ -1,17 +1,59 @@
 package slice
 
 import (
+	"bytes"
 	"fmt"
+	"path/filepath"
 	"regexp"
 )
 
-var regKN = regexp.MustCompile(`^[^/]+/[^/]+$`)
+var (
+	regKN      = regexp.MustCompile(`^[^/]+/[^/]+$`)
+	extensions = []string{".yaml", ".yml"}
+)
 
 func (s *Split) init() error {
-	s.log.Printf("Loading file %s", s.opts.InputFile)
-	buf, err := loadfile(s.opts.InputFile)
-	if err != nil {
-		return err
+	s.log.Printf("Initializing with settings: %#v", s.opts)
+
+	if s.opts.InputFile != "" && s.opts.InputFolder != "" {
+		return fmt.Errorf("cannot specify both input file and input folder")
+	}
+
+	if s.opts.InputFile == "" && s.opts.InputFolder == "" {
+		return fmt.Errorf("input file or input folder is required")
+	}
+
+	var buf *bytes.Buffer
+
+	if s.opts.InputFile != "" {
+		s.log.Printf("Loading file %s", s.opts.InputFile)
+		var err error
+		buf, err = loadfile(s.opts.InputFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	if s.opts.InputFolder != "" {
+		exts := extensions
+		s.opts.InputFolder = filepath.Clean(s.opts.InputFolder)
+
+		if len(s.opts.InputFolderExt) > 0 {
+			exts = s.opts.InputFolderExt
+		}
+
+		s.log.Printf("Loading folder %q", s.opts.InputFolder)
+		var err error
+		var count int
+		buf, count, err = loadfolder(exts, s.opts.InputFolder, s.opts.Recurse)
+		if err != nil {
+			return err
+		}
+		s.log.Printf("Found %d files in folder %q", count, s.opts.InputFolder)
+	}
+
+	if buf == nil || buf.Len() == 0 {
+		return fmt.Errorf("no data found in input file or folder")
 	}
 
 	s.data = buf

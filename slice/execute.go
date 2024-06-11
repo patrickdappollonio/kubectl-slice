@@ -188,7 +188,10 @@ func (s *Split) store() error {
 				s.WriteStdout("---")
 			}
 
-			s.WriteStdout("# File: %s (%d bytes)", fullpath, fileLength)
+			if !s.opts.RemoveFileComments {
+				s.WriteStdout("# File: %s (%d bytes)", fullpath, fileLength)
+			}
+
 			s.WriteStdout("%s", v.data)
 			continue
 

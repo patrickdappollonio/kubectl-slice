@@ -1,6 +1,7 @@
 package slice
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"text/template"
@@ -36,7 +37,7 @@ func improveExecError(err error) error {
 	if pos := strings.LastIndex(s, ":"); pos >= 0 {
 		return template.ExecError{
 			Name: "",
-			Err:  fmt.Errorf(strings.TrimSpace(s[pos+1:])),
+			Err:  errors.New(strings.TrimSpace(s[pos+1:])),
 		}
 	}
 

@@ -4,6 +4,9 @@ on:
     tags:
       - "*"
 
+permissions:
+  packages: write
+
 jobs:
   goreleaser:
     name: Release Application
@@ -23,6 +26,18 @@ jobs:
           version: latest
       - name: Test application
         run: go test -v ./...
+      - name: Set up QEMU
+        uses: docker/login-action@v3
+        with:
+          registry: "ghcr.io"
+          username: ${{ github.actor}}
+          password: ${{ secrets.TOKEN }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-actions@v3
+      - name: Release container image to Github
+        uses: goreleaser/goreleaser-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}      
       - name: Release application to Github
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -33,3 +48,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update new version in krew-index
         uses: rajatjindal/krew-release-bot@v0.0.46
+      

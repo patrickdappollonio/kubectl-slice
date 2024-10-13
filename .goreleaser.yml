@@ -34,7 +34,7 @@ dockers:
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
 
   - image_templates:
-      - "ghcr.io/patrickdappollonio/docker-http-server:{{ .Tag }}-arm64"
+      - "ghcr.io/patrickdappollonio/kubectl-slice:{{ .Tag }}-arm64"
     goos: linux
     goarch: arm64
     use: buildx
@@ -49,18 +49,18 @@ dockers:
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
 
 docker_manifests:
-  - name_template: "ghcr.io/patrickdappollonio/docker-http-server:v{{ .RawVersion }}"
+  - name_template: "ghcr.io/patrickdappollonio/kubectl-slice:v{{ .RawVersion }}"
     image_templates:
-      - "ghcr.io/patrickdappollonio/docker-http-server:{{ .Tag }}-amd64"
-      - "ghcr.io/patrickdappollonio/docker-http-server:{{ .Tag }}-arm64"
-  - name_template: "ghcr.io/patrickdappollonio/docker-http-server:v{{ .Major }}"
+      - "ghcr.io/patrickdappollonio/kubectl-slice:{{ .Tag }}-amd64"
+      - "ghcr.io/patrickdappollonio/kubectl-slice:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/patrickdappollonio/kubectl-slice:v{{ .Major }}"
     image_templates:
-      - "ghcr.io/patrickdappollonio/docker-http-server:{{ .Tag }}-amd64"
-      - "ghcr.io/patrickdappollonio/docker-http-server:{{ .Tag }}-arm64"
-  - name_template: "ghcr.io/patrickdappollonio/docker-http-server:latest"
+      - "ghcr.io/patrickdappollonio/kubectl-slice:{{ .Tag }}-amd64"
+      - "ghcr.io/patrickdappollonio/kubectl-slice:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/patrickdappollonio/kubectl-slice:latest"
     image_templates:
-      - "ghcr.io/patrickdappollonio/docker-http-server:{{ .Tag }}-amd64"
-      - "ghcr.io/patrickdappollonio/docker-http-server:{{ .Tag }}-arm64"
+      - "ghcr.io/patrickdappollonio/kubectl-slice:{{ .Tag }}-amd64"
+      - "ghcr.io/patrickdappollonio/kubectl-slice:{{ .Tag }}-arm64"
       
 archives:
   - name_template: >-

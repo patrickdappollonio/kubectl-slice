@@ -8,7 +8,7 @@ ARG KUBECTL_VERSION
 ARG YQ_VERSION
 
 # Install curl and certificates, and clean up in one layer to reduce image size
-RUN apt-get update && apt-get install add -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists*

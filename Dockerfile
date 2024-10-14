@@ -2,15 +2,16 @@ ARG KUBECTL_VERSION=1.31.1
 ARG YQ_VERSION=v4.44.3
 
 # Stage 1: Download binaries
-FROM alpine as download_binary
+FROM debian:12-slim as download_binary
 
 ARG KUBECTL_VERSION
 ARG YQ_VERSION
 
 # Install curl and certificates, and clean up in one layer to reduce image size
-RUN apk update && apk add --no-cache \
+RUN apt-get update && apt-get install add -y --no-install-recommends \
     curl \
-    ca-certificates
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists*
 
 # Download kubectl binary
 RUN curl -sSL -o /kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
@@ -21,13 +22,16 @@ RUN curl -sSL -o /yq "https://github.com/mikefarah/yq/releases/download/${YQ_VER
   && chmod +x /yq
 
 # Stage 2
-FROM alpine 
+FROM debian:12-slim 
 
-RUN apk update && apk add --no-cache \
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
   sudo \
-  && adduser -D -s /bin/bash slice \
+  && useradd -m -s /bin/bash slice \
   && echo 'slice ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/slice \
-  && chmod 0440 /etc/sudoers.d/slice 
+  && chmod 0440 /etc/sudoers.d/slice \
+  && rm -rf /var/lib/apt/lists/*
 
 # Copy binaries from the download_binary stage
 COPY --from=download_binary /kubectl /usr/local/bin/kubectl
@@ -36,5 +40,6 @@ COPY --from=download_binary /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca
 
 # Copy kubectl-slice from local filesystem
 COPY kubectl-slice /usr/local/bin/kubectl-slice
+
 USER slice
 WORKDIR /home/slice

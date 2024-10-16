@@ -31,13 +31,13 @@ jobs:
         with:
           registry: "ghcr.io"
           username: ${{ github.repository_owner}}
-          password: ${{ secrets.TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up QEMU
         uses: docker/setup-qemu-actions@v3
       - name: Release container image to Github
         uses: goreleaser/goreleaser-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}      
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
       - name: Release application to Github
         uses: goreleaser/goreleaser-action@v6
         with:

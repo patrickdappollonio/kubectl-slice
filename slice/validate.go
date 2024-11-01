@@ -104,6 +104,10 @@ func (s *Split) validateFilters() error {
 		return fmt.Errorf("cannot specify both included and excluded")
 	}
 
+	if len(s.opts.ExcludedGroups) > 0 && len(s.opts.IncludedGroups) > 0 {
+		return fmt.Errorf("cannot specify both included and excluded groups")
+	}
+
 	// Merge all filters into excluded and included.
 	for _, v := range s.opts.IncludedKinds {
 		s.opts.Included = append(s.opts.Included, fmt.Sprintf("%s/*", v))

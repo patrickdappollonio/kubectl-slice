@@ -79,6 +79,17 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 		}
 	}
 
+	var groups []string
+	if len(s.opts.IncludedGroups) > 0 {
+		groups = s.opts.IncludedGroups
+	} else {
+		groups = s.opts.ExcludedGroups
+	}
+
+	if err := checkGroup(manifest, groups, len(s.opts.IncludedGroups) > 0); err != nil {
+		return yamlFile{}, &skipErr{}
+	}
+
 	// Trim the file name
 	name := strings.TrimSpace(buf.String())
 
@@ -150,4 +161,37 @@ func checkKubernetesBasics(manifest map[string]interface{}) kubeObjectMeta {
 	}
 
 	return metadata
+}
+
+func checkGroup(manifest map[string]interface{}, groupName []string, included bool) error {
+
+	apiVersionRaw, ok := manifest["apiVersion"]
+	if !ok {
+		return fmt.Errorf("missing 'apiVersion' in manifest")
+	}
+
+	// Split the apiVersion string
+	apiVersion, ok := apiVersionRaw.(string)
+	if !ok {
+		return fmt.Errorf("'apiVersion' should be a string")
+	}
+	api := strings.Split(apiVersion, "/")[0]
+
+	for _, group := range groupName {
+		if included {
+			if api == group {
+				return nil
+			}
+		} else {
+			if api == group {
+				return &skipErr{}
+			}
+		}
+	}
+
+	if included {
+		return &skipErr{}
+	} else {
+		return nil
+	}
 }

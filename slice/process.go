@@ -164,7 +164,6 @@ func checkKubernetesBasics(manifest map[string]interface{}) kubeObjectMeta {
 }
 
 func checkGroup(manifest map[string]interface{}, groupName []string, included bool) error {
-
 	apiVersionRaw, ok := manifest["apiVersion"]
 	if !ok {
 		return fmt.Errorf("missing 'apiVersion' in manifest")

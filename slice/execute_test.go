@@ -223,7 +223,7 @@ func TestExecute_writeToFileCases(t *testing.T) {
 	t.Run("truncate existent file", func(tt *testing.T) {
 		preexistent := filepath.Join(tempdir, "test_no_newline.txt")
 
-		require.NoError(tt, os.WriteFile(preexistent, []byte("foobarbaz"), 0644))
+		require.NoError(tt, os.WriteFile(preexistent, []byte("foobarbaz"), 0o644))
 		require.NoError(tt, s.writeToFile(preexistent, []byte("test")))
 
 		content, err := os.ReadFile(preexistent)
@@ -232,12 +232,12 @@ func TestExecute_writeToFileCases(t *testing.T) {
 	})
 
 	t.Run("attempt writing to a read only directory", func(tt *testing.T) {
-		require.NoError(tt, os.MkdirAll(filepath.Join(tempdir, "readonly"), 0444))
+		require.NoError(tt, os.MkdirAll(filepath.Join(tempdir, "readonly"), 0o444))
 		require.Error(tt, s.writeToFile(filepath.Join(tempdir, "readonly", "test.txt"), []byte("test")))
 	})
 
 	t.Run("attempt writing to a read only sub-directory", func(tt *testing.T) {
-		require.NoError(tt, os.MkdirAll(filepath.Join(tempdir, "readonly_sub"), 0444))
+		require.NoError(tt, os.MkdirAll(filepath.Join(tempdir, "readonly_sub"), 0o444))
 		require.Error(tt, s.writeToFile(filepath.Join(tempdir, "readonly_sub", "readonly", "test.txt"), []byte("test")))
 	})
 }
@@ -317,7 +317,7 @@ metadata:
 			tdoutput := t.TempDir()
 			require.NotEqual(t, tdinput, tdoutput, "input and output directories should be different")
 
-			err := os.WriteFile(filepath.Join(tdinput, "input.yaml"), []byte(tt.input), 0644)
+			err := os.WriteFile(filepath.Join(tdinput, "input.yaml"), []byte(tt.input), 0o644)
 			require.NoError(t, err, "error found while writing input file")
 
 			s, err := New(Options{

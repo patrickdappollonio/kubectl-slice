@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	folderChmod  = 0775
-	defaultChmod = 0664
+	folderChmod  = 0o775
+	defaultChmod = 0o664
 )
 
 func (s *Split) processSingleFile(file []byte) error {
@@ -108,7 +108,6 @@ func (s *Split) scan() error {
 	for {
 		// Grab a single line
 		line, err := scanner.ReadString('\n')
-
 		// Find if there's an error
 		if err != nil {
 			// If we reached the end of file, handle up to this point

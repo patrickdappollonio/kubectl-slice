@@ -34,27 +34,6 @@ spec:
           image: patrickdappollonio/hello-docker
 
 ---
-
-apiVersion: apps1/v2
-kind: Deployment
-metadata:
-  name: hello-docker1
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: hello-docker-app
-  template:
-    metadata:
-      labels:
-        app: hello-docker-app
-    spec:
-      containers:
-        - name: hello-docker-container
-          image: patrickdappollonio/hello-docker
-
----
-
 apiVersion: v1
 kind: Service
 metadata:

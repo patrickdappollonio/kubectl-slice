@@ -79,15 +79,17 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 		}
 	}
 
-	var groups []string
-	if len(s.opts.IncludedGroups) > 0 {
-		groups = s.opts.IncludedGroups
-	} else {
-		groups = s.opts.ExcludedGroups
-	}
+	if len(s.opts.IncludedGroups) > 0 || len(s.opts.ExcludedGroups) > 0 {
+		var groups []string
+		if len(s.opts.IncludedGroups) > 0 {
+			groups = s.opts.IncludedGroups
+		} else if len(s.opts.ExcludedGroups) > 0 {
+			groups = s.opts.ExcludedGroups
+		}
 
-	if err := checkGroup(manifest, groups, len(s.opts.IncludedGroups) > 0); err != nil {
-		return yamlFile{}, &skipErr{}
+		if err := checkGroup(manifest, groups, len(s.opts.IncludedGroups) > 0); err != nil {
+			return yamlFile{}, &skipErr{}
+		}
 	}
 
 	// Trim the file name

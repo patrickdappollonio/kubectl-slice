@@ -111,13 +111,11 @@ func namespaced(manifest map[string]interface{}) (bool, error) {
 	default:
 		return false, fmt.Errorf("kind is not a string")
 	}
-	fmt.Println("Reached A")
 	if v, ok := clusterScoped[apiVersion]; ok {
-		if _, ok := v[kind]; ok {
-			return false, nil
+		if clusterScoped, ok := v[kind]; ok {
+			return !clusterScoped, nil
 		}
 	}
-	fmt.Println("Reached B")
 	// best effort, assume cluster scoped if unknown gvk
 	// and resource doesn't have a namespace declared
 	switch v := manifest["metadata"].(type) {

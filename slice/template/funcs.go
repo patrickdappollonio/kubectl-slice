@@ -42,57 +42,101 @@ var Functions = template.FuncMap{
 	"namespaced":   namespaced,
 }
 
-var clusterScoped = map[string]map[string]bool{
+// kubernetes built-in stable API-s  shouldn't need external definition
+// extracted from vanilla k8s cluster using kubectl api-resources
+var namespaceScoped = map[string]map[string]bool{
 	"v1": {
-		// "Namespace":        true,
-		"Node":             true,
-		"PersistentVolume": true,
+		"Binding":               true,
+		"ConfigMap":             true,
+		"Endpoints":             true,
+		"Event":                 true,
+		"LimitRange":            true,
+		"Namespace":             false,
+		"Node":                  false,
+		"PersistentVolume":      false,
+		"PersistentVolumeClaim": true,
+		"Pod":                   true,
+		"PodTemplate":           true,
+		"ReplicationController": true,
+		"ResourceQuota":         true,
+		"Secret":                true,
+		"Service":               true,
+		"ServiceAccount":        true,
 	},
 	"admissionregistration.k8s.io/v1": {
-		"MutatingWebhookConfiguration":     true,
-		"ValidatingAdmissionPolicy":        true,
-		"ValidatingAdmissionPolicyBinding": true,
-		"ValidatingWebhookConfiguration":   true,
+		"MutatingWebhookConfiguration":     false,
+		"ValidatingAdmissionPolicy":        false,
+		"ValidatingAdmissionPolicyBinding": false,
+		"ValidatingWebhookConfiguration":   false,
 	},
 	"apiextensions.k8s.io/v1": {
-		"CustomResourceDefinition": true,
+		"CustomResourceDefinition": false,
 	},
 	"apiregistration.k8s.io/v1": {
-		"APIService": true,
+		"APIService": false,
+	},
+	"apps/v1": {
+		"ControllerRevision": true,
+		"DaemonSet":          true,
+		"Deployment":         true,
+		"ReplicaSet":         true,
+		"StatefulSet":        true,
 	},
 	"authentication.k8s.io/v1": {
-		"SelfSubjectReview": true,
-		"TokenReview":       true,
+		"SelfSubjectReview": false,
+		"TokenReview":       false,
 	},
 	"authorization.k8s.io/v1": {
-		"SelfSubjectAccessReview": true,
-		"SelfSubjectRulesReview":  true,
+		"LocalSubjectAccessReview": true,
+		"SelfSubjectAccessReview":  false,
+		"SelfSubjectRulesReview":   false,
+	},
+	"autoscaling/v2": {
+		"HorizontalPodAutoscaler": true,
+	},
+	"batch/v1": {
+		"CronJob": true,
+		"Job":     true,
 	},
 	"certificates.k8s.io/v1": {
-		"CertificateSigningRequest": true,
+		"CertificateSigningRequest": false,
+	},
+	"coordination.k8s.io/v1": {
+		"Lease": true,
+	},
+	"discovery.k8s.io/v1": {
+		"EndpointSlice": true,
 	},
 	"flowcontrol.apiserver.k8s.io/v1": {
-		"FlowSchema":                 true,
-		"PriorityLevelConfiguration": true,
+		"FlowSchema":                 false,
+		"PriorityLevelConfiguration": false,
 	},
 	"networking.k8s.io/v1": {
-		"IngressClass": true,
+		"Ingress":       true,
+		"IngressClass":  false,
+		"NetworkPolicy": true,
 	},
 	"node.k8s.io/v1": {
-		"RuntimeClass": true,
+		"RuntimeClass": false,
+	},
+	"policy/v1": {
+		"PodDisruptionBudget": true,
 	},
 	"rbac.authorization.k8s.io/v1": {
-		"ClusterRole":        true,
-		"ClusterRoleBinding": true,
+		"ClusterRole":        false,
+		"ClusterRoleBinding": false,
+		"Role":               true,
+		"RoleBinding":        true,
 	},
 	"scheduling.k8s.io/v1": {
-		"PriorityClass": true,
+		"PriorityClass": false,
 	},
 	"storage.k8s.io/v1": {
-		"CSIDriver":        true,
-		"CSINode":          true,
-		"StorageClass":     true,
-		"VolumeAttachment": true,
+		"CSIDriver":          false,
+		"CSINode":            false,
+		"StorageClass":       false,
+		"VolumeAttachment":   false,
+		"CSIStorageCapacity": true,
 	},
 }
 
@@ -111,9 +155,9 @@ func namespaced(manifest map[string]interface{}) (bool, error) {
 	default:
 		return false, fmt.Errorf("kind is not a string")
 	}
-	if v, ok := clusterScoped[apiVersion]; ok {
-		if clusterScoped, ok := v[kind]; ok {
-			return !clusterScoped, nil
+	if v, ok := namespaceScoped[apiVersion]; ok {
+		if namespaced, ok := v[kind]; ok {
+			return namespaced, nil
 		}
 	}
 	// best effort, assume cluster scoped if unknown gvk

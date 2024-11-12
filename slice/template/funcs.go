@@ -39,6 +39,96 @@ var Functions = template.FuncMap{
 	"dottodash":    jsonDotToDash,
 	"dottounder":   jsonDotToUnder,
 	"index":        mapValueByIndex,
+	"namespaced":   namespaced,
+}
+
+var clusterScoped = map[string]map[string]bool{
+	"v1": {
+		// "Namespace":        true,
+		"Node":             true,
+		"PersistentVolume": true,
+	},
+	"admissionregistration.k8s.io/v1": {
+		"MutatingWebhookConfiguration":     true,
+		"ValidatingAdmissionPolicy":        true,
+		"ValidatingAdmissionPolicyBinding": true,
+		"ValidatingWebhookConfiguration":   true,
+	},
+	"apiextensions.k8s.io/v1": {
+		"CustomResourceDefinition": true,
+	},
+	"apiregistration.k8s.io/v1": {
+		"APIService": true,
+	},
+	"authentication.k8s.io/v1": {
+		"SelfSubjectReview": true,
+		"TokenReview":       true,
+	},
+	"authorization.k8s.io/v1": {
+		"SelfSubjectAccessReview": true,
+		"SelfSubjectRulesReview":  true,
+	},
+	"certificates.k8s.io/v1": {
+		"CertificateSigningRequest": true,
+	},
+	"flowcontrol.apiserver.k8s.io/v1": {
+		"FlowSchema":                 true,
+		"PriorityLevelConfiguration": true,
+	},
+	"networking.k8s.io/v1": {
+		"IngressClass": true,
+	},
+	"node.k8s.io/v1": {
+		"RuntimeClass": true,
+	},
+	"rbac.authorization.k8s.io/v1": {
+		"ClusterRole":        true,
+		"ClusterRoleBinding": true,
+	},
+	"scheduling.k8s.io/v1": {
+		"PriorityClass": true,
+	},
+	"storage.k8s.io/v1": {
+		"CSIDriver":        true,
+		"CSINode":          true,
+		"StorageClass":     true,
+		"VolumeAttachment": true,
+	},
+}
+
+func namespaced(manifest map[string]interface{}) (bool, error) {
+	var apiVersion string
+	var kind string
+	switch v := manifest["apiVersion"].(type) {
+	case string:
+		apiVersion = v
+	default:
+		return false, fmt.Errorf("apiVersion is not a string")
+	}
+	switch v := manifest["kind"].(type) {
+	case string:
+		kind = v
+	default:
+		return false, fmt.Errorf("kind is not a string")
+	}
+	fmt.Println("Reached A")
+	if v, ok := clusterScoped[apiVersion]; ok {
+		if _, ok := v[kind]; ok {
+			return false, nil
+		}
+	}
+	fmt.Println("Reached B")
+	// best effort, assume cluster scoped if unknown gvk
+	// and resource doesn't have a namespace declared
+	switch v := manifest["metadata"].(type) {
+	case map[string]interface{}:
+		if _, ok := v["namespace"]; ok {
+			return true, nil
+		}
+	default:
+		return false, fmt.Errorf("metadata is not a map")
+	}
+	return false, nil
 }
 
 // mapValueByIndex returns the value of the map at the given index

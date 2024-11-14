@@ -89,4 +89,7 @@ type Options struct {
 
 	AllowEmptyNames bool
 	AllowEmptyKinds bool
+
+	IncludedGroups []string
+	ExcludedGroups []string
 }

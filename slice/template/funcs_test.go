@@ -275,7 +275,7 @@ func Test_jsonReplace(t *testing.T) {
 }
 
 func Test_env(t *testing.T) {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz")
+	letters := []rune("abcdefghijklmnopqrstuvwxyz")
 
 	randSeq := func(n int) string {
 		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -417,7 +417,6 @@ func Test_jsonLowerAndUpper(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			lowered, err := jsonLower(tt.args.val)
 			requireErrorIf(t, tt.wantErr, err)
 

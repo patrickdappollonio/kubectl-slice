@@ -79,6 +79,23 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 		}
 	}
 
+	if len(s.opts.IncludedGroups) > 0 || len(s.opts.ExcludedGroups) > 0 {
+		if k8smeta.APIVersion == "" {
+			return yamlFile{}, &cantFindFieldErr{fieldName: "apiVersion", fileCount: s.fileCount, meta: k8smeta}
+		}
+
+		var groups []string
+		if len(s.opts.IncludedGroups) > 0 {
+			groups = s.opts.IncludedGroups
+		} else if len(s.opts.ExcludedGroups) > 0 {
+			groups = s.opts.ExcludedGroups
+		}
+
+		if err := checkGroup(k8smeta, groups, len(s.opts.IncludedGroups) > 0); err != nil {
+			return yamlFile{}, &skipErr{}
+		}
+	}
+
 	// Trim the file name
 	name := strings.TrimSpace(buf.String())
 
@@ -150,4 +167,25 @@ func checkKubernetesBasics(manifest map[string]interface{}) kubeObjectMeta {
 	}
 
 	return metadata
+}
+
+func checkGroup(objmeta kubeObjectMeta, groupName []string, included bool) error {
+
+	for _, group := range groupName {
+		if included {
+			if objmeta.GetGroupFromAPIVersion() == strings.ToLower(group) {
+				return nil
+			}
+		} else {
+			if objmeta.GetGroupFromAPIVersion() == strings.ToLower(group) {
+				return &skipErr{}
+			}
+		}
+	}
+
+	if included {
+		return &skipErr{}
+	} else {
+		return nil
+	}
 }

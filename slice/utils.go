@@ -56,7 +56,6 @@ func loadfolder(extensions []string, folderPath string, recurse bool) (*bytes.Bu
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, 0, err
 	}

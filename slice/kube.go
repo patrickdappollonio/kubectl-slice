@@ -20,7 +20,6 @@ type kubeObjectMeta struct {
 }
 
 func (objectMeta *kubeObjectMeta) GetGroupFromAPIVersion() string {
-
 	fields := strings.Split(objectMeta.APIVersion, "/")
 	if len(fields) == 2 {
 		return strings.ToLower(fields[0])

@@ -80,7 +80,6 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 	}
 
 	if len(s.opts.IncludedGroups) > 0 || len(s.opts.ExcludedGroups) > 0 {
-
 		if k8smeta.APIVersion == "" {
 			return yamlFile{}, &cantFindFieldErr{fieldName: "apiVersion", fileCount: s.fileCount, meta: k8smeta}
 		}

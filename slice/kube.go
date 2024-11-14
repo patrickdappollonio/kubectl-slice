@@ -2,6 +2,7 @@ package slice
 
 import (
 	"sort"
+	"strings"
 )
 
 type yamlFile struct {
@@ -15,6 +16,17 @@ type kubeObjectMeta struct {
 	Kind       string
 	Name       string
 	Namespace  string
+	Group      string
+}
+
+func (objectMeta *kubeObjectMeta) GetGroupFromAPIVersion() string {
+
+	fields := strings.Split(objectMeta.APIVersion, "/")
+	if len(fields) == 2 {
+		return strings.ToLower(fields[0])
+	}
+
+	return ""
 }
 
 func (k kubeObjectMeta) empty() bool {

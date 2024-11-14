@@ -80,6 +80,11 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 	}
 
 	if len(s.opts.IncludedGroups) > 0 || len(s.opts.ExcludedGroups) > 0 {
+
+		if k8smeta.APIVersion == "" {
+			return yamlFile{}, &cantFindFieldErr{fieldName: "apiVersion", fileCount: s.fileCount, meta: k8smeta}
+		}
+
 		var groups []string
 		if len(s.opts.IncludedGroups) > 0 {
 			groups = s.opts.IncludedGroups
@@ -87,7 +92,7 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 			groups = s.opts.ExcludedGroups
 		}
 
-		if err := checkGroup(manifest, groups, len(s.opts.IncludedGroups) > 0); err != nil {
+		if err := checkGroup(k8smeta, groups, len(s.opts.IncludedGroups) > 0); err != nil {
 			return yamlFile{}, &skipErr{}
 		}
 	}
@@ -165,26 +170,15 @@ func checkKubernetesBasics(manifest map[string]interface{}) kubeObjectMeta {
 	return metadata
 }
 
-func checkGroup(manifest map[string]interface{}, groupName []string, included bool) error {
-	apiVersionRaw, ok := manifest["apiVersion"]
-	if !ok {
-		return fmt.Errorf("missing 'apiVersion' in manifest")
-	}
-
-	// Split the apiVersion string
-	apiVersion, ok := apiVersionRaw.(string)
-	if !ok {
-		return fmt.Errorf("'apiVersion' should be a string")
-	}
-	api := strings.Split(apiVersion, "/")[0]
+func checkGroup(objmeta kubeObjectMeta, groupName []string, included bool) error {
 
 	for _, group := range groupName {
 		if included {
-			if api == group {
+			if objmeta.GetGroupFromAPIVersion() == strings.ToLower(group) {
 				return nil
 			}
 		} else {
-			if api == group {
+			if objmeta.GetGroupFromAPIVersion() == strings.ToLower(group) {
 				return &skipErr{}
 			}
 		}

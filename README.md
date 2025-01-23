@@ -5,6 +5,7 @@
 - [`kubectl-slice`: split Kubernetes YAMLs into files](#kubectl-slice-split-kubernetes-yamls-into-files)
   - [Installation](#installation)
     - [Using `krew`](#using-krew)
+    - [Using Homebrew](#using-homebrew)
     - [Download and install manually](#download-and-install-manually)
   - [Usage](#usage)
   - [Why `kubectl-slice`?](#why-kubectl-slice)
@@ -64,6 +65,14 @@ To install, use the following command:
 
 ```bash
 kubectl krew install slice
+```
+
+### Using Homebrew
+
+`kubectl-slice` is available as a Homebrew tap for both macOS and Linux:
+
+```bash
+brew install patrickdappollonio/tap/kubectl-slice
 ```
 
 ### Download and install manually

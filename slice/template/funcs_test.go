@@ -612,3 +612,96 @@ func requireErrorIf(t *testing.T, wantErr bool, err error) {
 		require.NoError(t, err)
 	}
 }
+
+func Test_namespaced(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   map[string]interface{}
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "builtin cluster scoped",
+			input: map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "Namespace",
+				"metadata": map[string]interface{}{
+					"name": "test",
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "builtin cluster scoped with namespace",
+			input: map[string]interface{}{
+				"apiVersion": "v1",
+				"kind":       "Namespace",
+				"metadata": map[string]interface{}{
+					"name":      "test",
+					"namespace": "test",
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "builtin namespaced",
+			input: map[string]interface{}{
+				"apiVersion": "apps/v1",
+				"kind":       "Deployment",
+				"metadata": map[string]interface{}{
+					"name":      "test",
+					"namespace": "test",
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "builtin namespaced without namespace",
+			input: map[string]interface{}{
+				"apiVersion": "apps/v1",
+				"kind":       "Deployment",
+				"metadata": map[string]interface{}{
+					"name": "test",
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "generic object with namespace",
+			input: map[string]interface{}{
+				"apiVersion": "generic/v1",
+				"kind":       "Generic",
+				"metadata": map[string]interface{}{
+					"name":      "test",
+					"namespace": "test",
+				},
+			},
+			want:    true,
+			wantErr: false,
+		},
+		{
+			name: "generic object without namespace",
+			input: map[string]interface{}{
+				"apiVersion": "generic/v1",
+				"kind":       "Generic",
+				"metadata": map[string]interface{}{
+					"name": "test",
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := namespaced(tt.input)
+			requireErrorIf(t, tt.wantErr, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}

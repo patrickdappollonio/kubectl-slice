@@ -39,6 +39,138 @@ var Functions = template.FuncMap{
 	"dottodash":    jsonDotToDash,
 	"dottounder":   jsonDotToUnder,
 	"index":        mapValueByIndex,
+	"namespaced":   namespaced,
+}
+
+// kubernetes built-in stable API-s  shouldn't need external definition
+// extracted from vanilla k8s cluster using kubectl api-resources
+var namespaceScoped = map[string]map[string]bool{
+	"v1": {
+		"Binding":               true,
+		"ConfigMap":             true,
+		"Endpoints":             true,
+		"Event":                 true,
+		"LimitRange":            true,
+		"Namespace":             false,
+		"Node":                  false,
+		"PersistentVolume":      false,
+		"PersistentVolumeClaim": true,
+		"Pod":                   true,
+		"PodTemplate":           true,
+		"ReplicationController": true,
+		"ResourceQuota":         true,
+		"Secret":                true,
+		"Service":               true,
+		"ServiceAccount":        true,
+	},
+	"admissionregistration.k8s.io/v1": {
+		"MutatingWebhookConfiguration":     false,
+		"ValidatingAdmissionPolicy":        false,
+		"ValidatingAdmissionPolicyBinding": false,
+		"ValidatingWebhookConfiguration":   false,
+	},
+	"apiextensions.k8s.io/v1": {
+		"CustomResourceDefinition": false,
+	},
+	"apiregistration.k8s.io/v1": {
+		"APIService": false,
+	},
+	"apps/v1": {
+		"ControllerRevision": true,
+		"DaemonSet":          true,
+		"Deployment":         true,
+		"ReplicaSet":         true,
+		"StatefulSet":        true,
+	},
+	"authentication.k8s.io/v1": {
+		"SelfSubjectReview": false,
+		"TokenReview":       false,
+	},
+	"authorization.k8s.io/v1": {
+		"LocalSubjectAccessReview": true,
+		"SelfSubjectAccessReview":  false,
+		"SelfSubjectRulesReview":   false,
+	},
+	"autoscaling/v2": {
+		"HorizontalPodAutoscaler": true,
+	},
+	"batch/v1": {
+		"CronJob": true,
+		"Job":     true,
+	},
+	"certificates.k8s.io/v1": {
+		"CertificateSigningRequest": false,
+	},
+	"coordination.k8s.io/v1": {
+		"Lease": true,
+	},
+	"discovery.k8s.io/v1": {
+		"EndpointSlice": true,
+	},
+	"flowcontrol.apiserver.k8s.io/v1": {
+		"FlowSchema":                 false,
+		"PriorityLevelConfiguration": false,
+	},
+	"networking.k8s.io/v1": {
+		"Ingress":       true,
+		"IngressClass":  false,
+		"NetworkPolicy": true,
+	},
+	"node.k8s.io/v1": {
+		"RuntimeClass": false,
+	},
+	"policy/v1": {
+		"PodDisruptionBudget": true,
+	},
+	"rbac.authorization.k8s.io/v1": {
+		"ClusterRole":        false,
+		"ClusterRoleBinding": false,
+		"Role":               true,
+		"RoleBinding":        true,
+	},
+	"scheduling.k8s.io/v1": {
+		"PriorityClass": false,
+	},
+	"storage.k8s.io/v1": {
+		"CSIDriver":          false,
+		"CSINode":            false,
+		"StorageClass":       false,
+		"VolumeAttachment":   false,
+		"CSIStorageCapacity": true,
+	},
+}
+
+func namespaced(manifest map[string]interface{}) (bool, error) {
+	var apiVersion string
+	var kind string
+	switch v := manifest["apiVersion"].(type) {
+	case string:
+		apiVersion = v
+	default:
+		return false, fmt.Errorf("apiVersion is not a string")
+	}
+	switch v := manifest["kind"].(type) {
+	case string:
+		kind = v
+	default:
+		return false, fmt.Errorf("kind is not a string")
+	}
+	if v, ok := namespaceScoped[apiVersion]; ok {
+		if namespaced, ok := v[kind]; ok {
+			return namespaced, nil
+		}
+	}
+	// best effort, assume cluster scoped if unknown gvk
+	// and resource doesn't have a namespace declared
+	switch v := manifest["metadata"].(type) {
+	case map[string]interface{}:
+		if _, ok := v["namespace"]; ok {
+			return true, nil
+		}
+	default:
+		return false, fmt.Errorf("metadata is not a map")
+	}
+	return false, nil
 }
 
 // mapValueByIndex returns the value of the map at the given index

@@ -193,3 +193,12 @@ The reason the parameters are flipped is to allow piping one output to another:
 {{ .metadata.labels | index "app.kubernetes.io/name" }}
 patrickdap-deployment
 ```
+
+## `indexOrEmpty`
+
+This function works the same as the index function but does not raise errors; instead, it returns an empty string, which can be used in if statements, piped to the default function, etc. For example:
+
+```
+{{ $component := indexOrEmpty "k8s.config/component" .metadata.labels | default "unlabeled" }}
+ {{ printf "%s-%s-%s.yaml" $component (lower .kind) .metadata.name }}
+```

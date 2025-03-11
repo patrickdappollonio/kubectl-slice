@@ -15,7 +15,7 @@
   - [`replace`](#replace)
   - [`alphanumify`, `alphanumdash`](#alphanumify-alphanumdash)
   - [`dottodash`, `dottounder`](#dottodash-dottounder)
-  - [`index`](#index)
+  - [`index`, `indexOrEmpty`](#index-indexorempty)
 
 The following template functions are available, with some functions having aliases for convenience:
 
@@ -167,7 +167,7 @@ secrets-foo_dev
 
 Particularly useful for Kubernetes FQDNs needed to be used as filenames.
 
-## `index`
+## `index`, `indexOrEmpty`
 
 For certain resources where YAML indexes are not alphanumeric, but contain special characters such as labels or annotations, `index` allows you to retrieve those resources. Consider the following YAML:
 
@@ -194,9 +194,10 @@ The reason the parameters are flipped is to allow piping one output to another:
 patrickdap-deployment
 ```
 
-## `indexOrEmpty`
+> [!NOTE]
+> The `index` function will raise an error if the key is not found. If you want to avoid this, use `indexOrEmpty`.
 
-This function works the same as the `index` function but does not raise errors; instead, it returns an empty string, which can be used in `if` statements, piped to the `default` function, etc. For example:
+`indexOrEmpty` works the same as the `index` function but does not raise errors; instead, it returns an empty string, which can be used in `if` statements, piped to the `default` function, etc. For example:
 
 ```
 {{ $component := indexOrEmpty "k8s.config/component" .metadata.labels | default "unlabeled" }}

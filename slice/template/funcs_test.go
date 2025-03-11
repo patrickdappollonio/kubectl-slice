@@ -10,6 +10,51 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_mapValueByIndexEmpty(t *testing.T) {
+	tests := []struct {
+		name  string
+		index string
+		m     map[string]interface{}
+		want  interface{}
+	}{
+		{
+			name:  "nil map",
+			index: "foo",
+			m:     nil,
+			want:  "",
+		},
+		{
+			name:  "empty index",
+			index: "",
+			m:     map[string]interface{}{},
+			want:  "",
+		},
+		{
+			name:  "fetch existent field",
+			index: "foo",
+			m: map[string]interface{}{
+				"foo": "bar",
+			},
+			want: "bar",
+		},
+		{
+			name:  "fetch nonexistent field",
+			index: "baz",
+			m: map[string]interface{}{
+				"foo": "bar",
+			},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapValueByIndexOrEmpty(tt.index, tt.m)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func Test_mapValueByIndex(t *testing.T) {
 	tests := []struct {
 		name    string

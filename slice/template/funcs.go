@@ -39,6 +39,25 @@ var Functions = template.FuncMap{
 	"dottodash":    jsonDotToDash,
 	"dottounder":   jsonDotToUnder,
 	"index":        mapValueByIndex,
+	"indexOrEmpty": mapValueByIndexOrEmpty,
+}
+
+// mapValueByIndexOrEmpty retrieves a value from a map without returning an error if the key is not found.
+func mapValueByIndexOrEmpty(index string, m map[string]interface{}) interface{} {
+	if m == nil {
+		return ""
+	}
+
+	if index == "" {
+		return ""
+	}
+
+	v, ok := m[index]
+	if !ok {
+		return ""
+	}
+
+	return v
 }
 
 // mapValueByIndex returns the value of the map at the given index

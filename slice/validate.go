@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+
+	"github.com/patrickdappollonio/kubectl-slice/pkg/files"
 )
 
 var (
@@ -28,7 +30,7 @@ func (s *Split) init() error {
 	if s.opts.InputFile != "" {
 		s.log.Printf("Loading file %s", s.opts.InputFile)
 		var err error
-		buf, err = loadfile(s.opts.InputFile)
+		buf, err = files.LoadFile(s.opts.InputFile)
 		if err != nil {
 			return err
 		}
@@ -45,7 +47,7 @@ func (s *Split) init() error {
 		s.log.Printf("Loading folder %q", s.opts.InputFolder)
 		var err error
 		var count int
-		buf, count, err = loadfolder(exts, s.opts.InputFolder, s.opts.Recurse)
+		buf, count, err = files.LoadFolder(exts, s.opts.InputFolder, s.opts.Recurse)
 		if err != nil {
 			return err
 		}

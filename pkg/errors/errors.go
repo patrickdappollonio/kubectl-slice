@@ -20,17 +20,32 @@ func (s *StrictModeSkipErr) Error() string {
 // SkipErr represents an error when a Kubernetes resource is intentionally skipped
 // based on user-provided include/exclude filter configuration
 type SkipErr struct {
-	Name string
-	Kind string
+	Name   string
+	Kind   string
+	Group  string
+	Reason string
 }
 
 func (e *SkipErr) Error() string {
+	if e.Name == "" && e.Kind == "" {
+		if e.Group != "" {
+			if e.Reason != "" {
+				return fmt.Sprintf("resource with API group %q is skipped: %s", e.Group, e.Reason)
+			}
+			return fmt.Sprintf("resource with API group %q is configured to be skipped", e.Group)
+		}
+		return "resource is configured to be skipped"
+	}
+
+	if e.Reason != "" {
+		return fmt.Sprintf("resource %s %q is skipped: %s", e.Kind, e.Name, e.Reason)
+	}
 	return fmt.Sprintf("resource %s %q is configured to be skipped", e.Kind, e.Name)
 }
 
-// NonK8sHelper provides a standard error message for YAML files that don't contain
+// nonKubernetesMessage provides a standard error message for YAML files that don't contain
 // standard Kubernetes metadata and are likely not Kubernetes resources
-const NonK8sHelper = `the file has no Kubernetes metadata: it is most likely a non-Kubernetes YAML file, you can skip it with --skip-non-k8s`
+const nonKubernetesMessage = `the file has no Kubernetes metadata: it is most likely a non-Kubernetes YAML file, you can skip it with --skip-non-k8s`
 
 // CantFindFieldErr represents an error when a required field is missing in a Kubernetes
 // resource. It includes contextual information about the file and resource.
@@ -50,7 +65,7 @@ func (e *CantFindFieldErr) Error() string {
 
 	// Type assertion to check if Meta has an empty() method
 	if metaWithEmpty, ok := e.Meta.(interface{ empty() bool }); ok && metaWithEmpty.empty() {
-		sb.WriteString(": " + NonK8sHelper)
+		sb.WriteString(": " + nonKubernetesMessage)
 	} else if meta, ok := e.Meta.(fmt.Stringer); ok {
 		sb.WriteString(fmt.Sprintf(": %s", meta.String()))
 	}

@@ -1,110 +1,139 @@
 package kubernetes
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/patrickdappollonio/kubectl-slice/pkg/errors"
+	apperrors "github.com/patrickdappollonio/kubectl-slice/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCheckGroupInclusion(t *testing.T) {
 	tests := []struct {
-		name             string
-		objmeta          *ObjectMeta
-		groupNames       []string
-		included         bool
-		expectSkipErr    bool
-		expectStrictErr  bool
-		strictErrField   string
+		name           string
+		objmeta        *ObjectMeta
+		groupNames     []string
+		included       bool
+		expectSkipErr  bool
+		expectedGroup  string
+		expectedReason string
 	}{
 		{
 			name: "included mode - group matches",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{"apps"},
-			included:   true,
+			groupNames:    []string{"apps"},
+			included:      true,
 			expectSkipErr: false,
 		},
 		{
 			name: "included mode - group doesn't match",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{"networking.k8s.io"},
-			included:   true,
-			expectSkipErr: true,
+			groupNames:     []string{"networking.k8s.io"},
+			included:       true,
+			expectSkipErr:  true,
+			expectedGroup:  "apps",
+			expectedReason: "does not match any included groups [networking.k8s.io]",
 		},
 		{
 			name: "included mode - core group",
 			objmeta: &ObjectMeta{
 				APIVersion: "v1",
+				Kind:       "Pod",
+				Name:       "test-pod",
 			},
-			groupNames: []string{""},
-			included:   true,
+			groupNames:    []string{""},
+			included:      true,
 			expectSkipErr: false,
 		},
 		{
 			name: "excluded mode - group matches",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{"apps"},
-			included:   false,
-			expectSkipErr: true,
+			groupNames:     []string{"apps"},
+			included:       false,
+			expectSkipErr:  true,
+			expectedGroup:  "apps",
+			expectedReason: "matches excluded group \"apps\"",
 		},
 		{
 			name: "excluded mode - group doesn't match",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{"networking.k8s.io"},
-			included:   false,
+			groupNames:    []string{"networking.k8s.io"},
+			included:      false,
 			expectSkipErr: false,
 		},
 		{
 			name: "multiple groups - included mode - one matches",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{"networking.k8s.io", "apps", "batch"},
-			included:   true,
+			groupNames:    []string{"networking.k8s.io", "apps", "batch"},
+			included:      true,
 			expectSkipErr: false,
 		},
 		{
 			name: "multiple groups - excluded mode - one matches",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{"networking.k8s.io", "apps", "batch"},
-			included:   false,
-			expectSkipErr: true,
+			groupNames:     []string{"networking.k8s.io", "apps", "batch"},
+			included:       false,
+			expectSkipErr:  true,
+			expectedGroup:  "apps",
+			expectedReason: "matches excluded group \"apps\"",
 		},
 		{
 			name: "case insensitive comparison",
 			objmeta: &ObjectMeta{
 				APIVersion: "Apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{"apps"},
-			included:   true,
+			groupNames:    []string{"apps"},
+			included:      true,
 			expectSkipErr: false,
 		},
 		{
 			name: "empty group list - included mode",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{},
-			included:   true,
-			expectSkipErr: true,
+			groupNames:     []string{},
+			included:       true,
+			expectSkipErr:  true,
+			expectedGroup:  "apps",
+			expectedReason: "no included groups specified",
 		},
 		{
 			name: "empty group list - excluded mode",
 			objmeta: &ObjectMeta{
 				APIVersion: "apps/v1",
+				Kind:       "Deployment",
+				Name:       "test-app",
 			},
-			groupNames: []string{},
-			included:   false,
+			groupNames:    []string{},
+			included:      false,
 			expectSkipErr: false,
 		},
 	}
@@ -112,11 +141,27 @@ func TestCheckGroupInclusion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := CheckGroupInclusion(tt.objmeta, tt.groupNames, tt.included)
-			
+
 			if tt.expectSkipErr {
-				require.IsType(t, &errors.SkipErr{}, err)
+				require.Error(t, err)
+
+				// Use errors.As for type checking instead of type assertion
+				var skipErr *apperrors.SkipErr
+				require.True(t, errors.As(err, &skipErr), "Expected error of type *errors.SkipErr")
+
+				// Additional checks for the error details when we have expected values
+				if tt.expectedGroup != "" {
+					require.Equal(t, tt.expectedGroup, skipErr.Group)
+
+					if tt.expectedReason != "" {
+						require.Equal(t, tt.expectedReason, skipErr.Reason)
+					}
+
+					require.Equal(t, tt.objmeta.Kind, skipErr.Kind)
+					require.Equal(t, tt.objmeta.Name, skipErr.Name)
+				}
 			} else {
-				require.Nil(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -124,11 +169,11 @@ func TestCheckGroupInclusion(t *testing.T) {
 
 func TestValidateRequiredFields(t *testing.T) {
 	tests := []struct {
-		name             string
-		meta             *ObjectMeta
-		strictMode       bool
-		expectErr        bool
-		expectedField    string
+		name          string
+		meta          *ObjectMeta
+		strictMode    bool
+		expectErr     bool
+		expectedField string
 	}{
 		{
 			name: "strict mode - all fields present",
@@ -138,7 +183,7 @@ func TestValidateRequiredFields(t *testing.T) {
 				Name:       "test-deployment",
 			},
 			strictMode: true,
-			expectErr: false,
+			expectErr:  false,
 		},
 		{
 			name: "non-strict mode - all fields present",
@@ -148,13 +193,13 @@ func TestValidateRequiredFields(t *testing.T) {
 				Name:       "test-deployment",
 			},
 			strictMode: false,
-			expectErr: false,
+			expectErr:  false,
 		},
 		{
-			name: "non-strict mode - missing fields",
-			meta: &ObjectMeta{},
+			name:       "non-strict mode - missing fields",
+			meta:       &ObjectMeta{},
 			strictMode: false,
-			expectErr: false,
+			expectErr:  false,
 		},
 		{
 			name: "strict mode - missing apiVersion",
@@ -162,8 +207,8 @@ func TestValidateRequiredFields(t *testing.T) {
 				Kind: "Deployment",
 				Name: "test-deployment",
 			},
-			strictMode: true,
-			expectErr: true,
+			strictMode:    true,
+			expectErr:     true,
 			expectedField: "apiVersion",
 		},
 		{
@@ -172,8 +217,8 @@ func TestValidateRequiredFields(t *testing.T) {
 				APIVersion: "apps/v1",
 				Name:       "test-deployment",
 			},
-			strictMode: true,
-			expectErr: true,
+			strictMode:    true,
+			expectErr:     true,
 			expectedField: "kind",
 		},
 		{
@@ -182,8 +227,8 @@ func TestValidateRequiredFields(t *testing.T) {
 				APIVersion: "apps/v1",
 				Kind:       "Deployment",
 			},
-			strictMode: true,
-			expectErr: true,
+			strictMode:    true,
+			expectErr:     true,
 			expectedField: "metadata.name",
 		},
 		{
@@ -194,21 +239,21 @@ func TestValidateRequiredFields(t *testing.T) {
 				Name:       "test-deployment",
 			},
 			strictMode: true,
-			expectErr: false,
+			expectErr:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateRequiredFields(tt.meta, tt.strictMode)
-			
+
 			if tt.expectErr {
-				require.NotNil(t, err)
-				strictErr, ok := err.(*errors.StrictModeSkipErr)
-				require.True(t, ok)
+				require.Error(t, err)
+				var strictErr *apperrors.StrictModeSkipErr
+				require.True(t, errors.As(err, &strictErr), "Expected error of type *errors.StrictModeSkipErr")
 				require.Equal(t, tt.expectedField, strictErr.FieldName)
 			} else {
-				require.Nil(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

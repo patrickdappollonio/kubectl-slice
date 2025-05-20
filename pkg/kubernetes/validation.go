@@ -8,7 +8,7 @@ import (
 
 // CheckGroupInclusion validates if a resource belongs to any of the specified groups
 // Returns nil if the resource should be included, or an error if it should be skipped
-func CheckGroupInclusion(objmeta ObjectMeta, groupNames []string, included bool) error {
+func CheckGroupInclusion(objmeta *ObjectMeta, groupNames []string, included bool) error {
 	for _, group := range groupNames {
 		if included {
 			if objmeta.GetGroupFromAPIVersion() == strings.ToLower(group) {
@@ -24,13 +24,13 @@ func CheckGroupInclusion(objmeta ObjectMeta, groupNames []string, included bool)
 	if included {
 		return &errors.SkipErr{}
 	}
-	
+
 	return nil
 }
 
 // ValidateRequiredFields verifies if a resource has all required Kubernetes fields
 // when operating in strict mode
-func ValidateRequiredFields(meta ObjectMeta, strictMode bool) error {
+func ValidateRequiredFields(meta *ObjectMeta, strictMode bool) error {
 	if !strictMode {
 		return nil
 	}

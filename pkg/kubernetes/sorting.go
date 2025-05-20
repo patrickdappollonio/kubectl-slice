@@ -8,7 +8,7 @@ import (
 // It's used throughout the application for storing and processing YAML resources.
 type YAMLFile struct {
 	Filename string
-	Meta     ObjectMeta
+	Meta     *ObjectMeta
 	Data     []byte
 }
 

@@ -24,12 +24,12 @@ func (k *ObjectMeta) GetGroupFromAPIVersion() string {
 }
 
 // Empty checks if all fields in the metadata are empty
-func (k ObjectMeta) Empty() bool {
+func (k *ObjectMeta) Empty() bool {
 	return k.APIVersion == "" && k.Kind == "" && k.Name == "" && k.Namespace == ""
 }
 
 // String returns a string representation of the metadata
-func (k ObjectMeta) String() string {
+func (k *ObjectMeta) String() string {
 	return strings.TrimSpace(strings.Join([]string{
 		"kind " + k.Kind,
 		"name " + k.Name,
@@ -54,11 +54,11 @@ func CheckStringInMap(local map[string]interface{}, key string) string {
 }
 
 // ExtractMetadata extracts Kubernetes metadata from a YAML manifest
-func ExtractMetadata(manifest map[string]interface{}) ObjectMeta {
-	var metadata ObjectMeta
-
-	metadata.APIVersion = CheckStringInMap(manifest, "apiVersion")
-	metadata.Kind = CheckStringInMap(manifest, "kind")
+func ExtractMetadata(manifest map[string]interface{}) *ObjectMeta {
+	metadata := &ObjectMeta{
+		APIVersion: CheckStringInMap(manifest, "apiVersion"),
+		Kind:       CheckStringInMap(manifest, "kind"),
+	}
 
 	if md, found := manifest["metadata"]; found {
 		if mdMap, ok := md.(map[string]interface{}); ok {

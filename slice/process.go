@@ -1,50 +1,42 @@
 package slice
 
 import (
-	"bytes"
 	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/mb0/glob"
 	"gopkg.in/yaml.v3"
+
+	"github.com/patrickdappollonio/kubectl-slice/pkg/errors"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/kubernetes"
 )
 
 // parseYAMLManifest parses a single YAML file as received by contents. It also renders the
 // template needed to generate its name
-func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
+func (s *Split) parseYAMLManifest(contents []byte) (kubernetes.YAMLFile, error) {
 	// All resources we'll handle are Kubernetes manifest, and even those who are lists,
 	// they're still Kubernetes Objects of type List, so we can use a map
 	manifest := make(map[string]interface{})
 
 	s.log.Println("Parsing YAML from buffer up to this point")
 	if err := yaml.Unmarshal(contents, &manifest); err != nil {
-		return yamlFile{}, fmt.Errorf("unable to parse YAML file number %d: %w", s.fileCount, err)
+		return kubernetes.YAMLFile{}, fmt.Errorf("unable to parse YAML file number %d: %w", s.fileCount, err)
 	}
 
 	// Render the name to a buffer using the Go Template
 	s.log.Println("Rendering filename template from Go Template")
-	var buf bytes.Buffer
-	if err := s.template.Execute(&buf, manifest); err != nil {
-		return yamlFile{}, fmt.Errorf("unable to render file name for YAML file number %d: %w", s.fileCount, improveExecError(err))
+	name, err := s.template.Execute(manifest)
+	if err != nil {
+		return kubernetes.YAMLFile{}, fmt.Errorf("unable to render file name for YAML file number %d: %w", s.fileCount, err)
 	}
 
 	// Check if file contains the required Kubernetes metadata
-	k8smeta := checkKubernetesBasics(manifest)
+	k8smeta := kubernetes.ExtractMetadata(manifest)
 
 	// Check if at least the three fields are not empty
-	if s.opts.StrictKubernetes {
-		if k8smeta.APIVersion == "" {
-			return yamlFile{}, &strictModeSkipErr{fieldName: "apiVersion"}
-		}
-
-		if k8smeta.Kind == "" {
-			return yamlFile{}, &strictModeSkipErr{fieldName: "kind"}
-		}
-
-		if k8smeta.Name == "" {
-			return yamlFile{}, &strictModeSkipErr{fieldName: "metadata.name"}
-		}
+	if err := kubernetes.ValidateRequiredFields(k8smeta, s.opts.StrictKubernetes); err != nil {
+		return kubernetes.YAMLFile{}, err
 	}
 
 	// Check before handling if we're about to filter resources
@@ -58,55 +50,53 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 
 	// Check if we have a Kubernetes kind and we're requesting inclusion or exclusion
 	if k8smeta.Kind == "" && !s.opts.AllowEmptyKinds && (hasIncluded || hasExcluded) {
-		return yamlFile{}, &cantFindFieldErr{fieldName: "kind", fileCount: s.fileCount, meta: k8smeta}
+		return kubernetes.YAMLFile{}, &errors.CantFindFieldErr{FieldName: "kind", FileCount: s.fileCount, Meta: k8smeta}
 	}
 
 	// Check if we have a Kubernetes name and we're requesting inclusion or exclusion
 	if k8smeta.Name == "" && !s.opts.AllowEmptyNames && (hasIncluded || hasExcluded) {
-		return yamlFile{}, &cantFindFieldErr{fieldName: "metadata.name", fileCount: s.fileCount, meta: k8smeta}
+		return kubernetes.YAMLFile{}, &errors.CantFindFieldErr{FieldName: "metadata.name", FileCount: s.fileCount, Meta: k8smeta}
 	}
 
 	// We need to check if the file should be skipped
 	if hasExcluded || hasIncluded {
 		// If we're working with including only specific resources, then filter by them
 		if hasIncluded && !inSliceIgnoreCaseGlob(s.opts.Included, fmt.Sprintf("%s/%s", k8smeta.Kind, k8smeta.Name)) {
-			return yamlFile{}, &skipErr{kind: "kind/name", name: fmt.Sprintf("%s/%s", k8smeta.Kind, k8smeta.Name)}
+			return kubernetes.YAMLFile{}, &errors.SkipErr{Kind: "kind/name", Name: fmt.Sprintf("%s/%s", k8smeta.Kind, k8smeta.Name)}
 		}
 
 		// Otherwise exclude resources based on the parameter received
 		if hasExcluded && inSliceIgnoreCaseGlob(s.opts.Excluded, fmt.Sprintf("%s/%s", k8smeta.Kind, k8smeta.Name)) {
-			return yamlFile{}, &skipErr{kind: "kind/name", name: fmt.Sprintf("%s/%s", k8smeta.Kind, k8smeta.Name)}
+			return kubernetes.YAMLFile{}, &errors.SkipErr{Kind: "kind/name", Name: fmt.Sprintf("%s/%s", k8smeta.Kind, k8smeta.Name)}
 		}
 	}
 
 	if len(s.opts.IncludedGroups) > 0 || len(s.opts.ExcludedGroups) > 0 {
 		if k8smeta.APIVersion == "" {
-			return yamlFile{}, &cantFindFieldErr{fieldName: "apiVersion", fileCount: s.fileCount, meta: k8smeta}
+			return kubernetes.YAMLFile{}, &errors.CantFindFieldErr{FieldName: "apiVersion", FileCount: s.fileCount, Meta: k8smeta}
 		}
 
 		var groups []string
-		if len(s.opts.IncludedGroups) > 0 {
+		included := len(s.opts.IncludedGroups) > 0
+		if included {
 			groups = s.opts.IncludedGroups
-		} else if len(s.opts.ExcludedGroups) > 0 {
+		} else {
 			groups = s.opts.ExcludedGroups
 		}
 
-		if err := checkGroup(k8smeta, groups, len(s.opts.IncludedGroups) > 0); err != nil {
-			return yamlFile{}, &skipErr{}
+		if err := kubernetes.CheckGroupInclusion(k8smeta, groups, included); err != nil {
+			return kubernetes.YAMLFile{}, err
 		}
 	}
 
-	// Trim the file name
-	name := strings.TrimSpace(buf.String())
-
-	// Fix for text/template Go issue #24963, as well as removing any linebreaks
-	name = strings.NewReplacer("<no value>", "", "\n", "").Replace(name)
-
 	if str := strings.TrimSuffix(name, filepath.Ext(name)); str == "" {
-		return yamlFile{}, fmt.Errorf("file name rendered will yield no file name for YAML file number %d (original name: %q, metadata: %v)", s.fileCount, name, k8smeta)
+		return kubernetes.YAMLFile{}, fmt.Errorf("file name rendered will yield no file name for YAML file number %d (original name: %q, metadata: %v)", s.fileCount, name, k8smeta)
 	}
 
-	return yamlFile{filename: name, meta: k8smeta}, nil
+	return kubernetes.YAMLFile{
+		Filename: name,
+		Meta:     k8smeta,
+	}, nil
 }
 
 // inSliceIgnoreCase checks if a string is in a slice, ignoring case
@@ -136,56 +126,4 @@ func inSliceIgnoreCaseGlob(slice []string, expected string) bool {
 	}
 
 	return false
-}
-
-// checkStringInMap checks if a string is in a map, and if not, returns an error
-func checkStringInMap(local map[string]interface{}, key string) string {
-	iface, found := local[key]
-
-	if !found {
-		return ""
-	}
-
-	str, ok := iface.(string)
-	if !ok {
-		return ""
-	}
-
-	return str
-}
-
-// checkKubernetesBasics check if the minimum required keys are there for a Kubernetes Object
-func checkKubernetesBasics(manifest map[string]interface{}) kubeObjectMeta {
-	var metadata kubeObjectMeta
-
-	metadata.APIVersion = checkStringInMap(manifest, "apiVersion")
-	metadata.Kind = checkStringInMap(manifest, "kind")
-
-	if md, found := manifest["metadata"]; found {
-		metadata.Name = checkStringInMap(md.(map[string]interface{}), "name")
-		metadata.Namespace = checkStringInMap(md.(map[string]interface{}), "namespace")
-	}
-
-	return metadata
-}
-
-func checkGroup(objmeta kubeObjectMeta, groupName []string, included bool) error {
-
-	for _, group := range groupName {
-		if included {
-			if objmeta.GetGroupFromAPIVersion() == strings.ToLower(group) {
-				return nil
-			}
-		} else {
-			if objmeta.GetGroupFromAPIVersion() == strings.ToLower(group) {
-				return &skipErr{}
-			}
-		}
-	}
-
-	if included {
-		return &skipErr{}
-	} else {
-		return nil
-	}
 }

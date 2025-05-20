@@ -1,4 +1,4 @@
-package slice
+package files
 
 import (
 	"bytes"
@@ -6,23 +6,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
-func inarray[T comparable](needle T, haystack []T) bool {
-	for _, v := range haystack {
-		if v == needle {
-			return true
-		}
-	}
-
-	return false
-}
-
-// loadfolder reads the folder contents recursively for `.yaml` and `.yml` files
-// and returns a buffer with the contents of all files found; returns the buffer
-// with all the files separated by `---` and the number of files found
-func loadfolder(extensions []string, folderPath string, recurse bool) (*bytes.Buffer, int, error) {
+// LoadFolder reads the folder contents recursively for files with specified extensions
+// and returns a buffer with the contents of all files found separated by `---`
+func LoadFolder(extensions []string, folderPath string, recurse bool) (*bytes.Buffer, int, error) {
 	var buffer bytes.Buffer
 	var count int
 
@@ -39,7 +29,7 @@ func loadfolder(extensions []string, folderPath string, recurse bool) (*bytes.Bu
 		}
 
 		ext := strings.ToLower(filepath.Ext(path))
-		if inarray(ext, extensions) {
+		if inArray(ext, extensions) {
 			count++
 
 			data, err := os.ReadFile(path)
@@ -67,8 +57,9 @@ func loadfolder(extensions []string, folderPath string, recurse bool) (*bytes.Bu
 	return &buffer, count, nil
 }
 
-func loadfile(fp string) (*bytes.Buffer, error) {
-	f, err := openFile(fp)
+// LoadFile reads a file and returns its contents as a buffer
+func LoadFile(fp string) (*bytes.Buffer, error) {
+	f, err := OpenFile(fp)
 	if err != nil {
 		return nil, err
 	}
@@ -83,14 +74,12 @@ func loadfile(fp string) (*bytes.Buffer, error) {
 	return &buf, nil
 }
 
-func openFile(fp string) (*os.File, error) {
+// OpenFile opens a file for reading, with special handling for stdin
+func OpenFile(fp string) (*os.File, error) {
 	if fp == os.Stdin.Name() {
-		// On Windows, the name in Go for stdin is `/dev/stdin` which doesn't
-		// exist. It must use the syscall to point to the file and open it
 		return os.Stdin, nil
 	}
 
-	// Any other file that's not stdin can be opened normally
 	f, err := os.Open(fp)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open file %q: %s", fp, err.Error())
@@ -99,7 +88,8 @@ func openFile(fp string) (*os.File, error) {
 	return f, nil
 }
 
-func deleteFolderContents(location string) error {
+// DeleteFolderContents removes all files in a directory
+func DeleteFolderContents(location string) error {
 	f, err := os.Open(location)
 	if err != nil {
 		return fmt.Errorf("unable to open folder %q: %s", location, err.Error())
@@ -118,4 +108,9 @@ func deleteFolderContents(location string) error {
 	}
 
 	return nil
+}
+
+// inArray checks if an element exists in a slice
+func inArray[T comparable](needle T, haystack []T) bool {
+	return slices.Contains(haystack, needle)
 }

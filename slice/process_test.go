@@ -2,9 +2,10 @@ package slice
 
 import (
 	"testing"
-	"text/template"
 
-	local "github.com/patrickdappollonio/kubectl-slice/slice/template"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/kubernetes"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/logger"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/template"
 	"github.com/stretchr/testify/require"
 )
 
@@ -174,7 +175,7 @@ func Test_checkStringInMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tt.want, checkStringInMap(tt.args.local, tt.args.key))
+			require.Equal(t, tt.want, kubernetes.CheckStringInMap(tt.args.local, tt.args.key))
 		})
 	}
 }
@@ -187,7 +188,7 @@ func Test_checkKubernetesBasics(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want kubeObjectMeta
+		want kubernetes.ObjectMeta
 	}{
 		{
 			name: "all fields found",
@@ -200,7 +201,7 @@ func Test_checkKubernetesBasics(t *testing.T) {
 					},
 				},
 			},
-			want: kubeObjectMeta{
+			want: kubernetes.ObjectMeta{
 				Kind:       "Deployment",
 				APIVersion: "apps/v1",
 				Name:       "foo",
@@ -211,7 +212,7 @@ func Test_checkKubernetesBasics(t *testing.T) {
 			args: args{
 				manifest: map[string]interface{}{},
 			},
-			want: kubeObjectMeta{},
+			want: kubernetes.ObjectMeta{},
 		},
 		{
 			name: "missing metadata fields",
@@ -221,7 +222,7 @@ func Test_checkKubernetesBasics(t *testing.T) {
 					"apiVersion": "apps/v1",
 				},
 			},
-			want: kubeObjectMeta{
+			want: kubernetes.ObjectMeta{
 				Kind:       "Deployment",
 				APIVersion: "apps/v1",
 			},
@@ -231,7 +232,7 @@ func Test_checkKubernetesBasics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			require.Equal(t, tt.want, checkKubernetesBasics(tt.args.manifest))
+			require.Equal(t, tt.want, kubernetes.ExtractMetadata(tt.args.manifest))
 		})
 	}
 }
@@ -241,7 +242,7 @@ func TestSplit_parseYAMLManifest(t *testing.T) {
 		name       string
 		contents   []byte
 		strictKube bool
-		want       yamlFile
+		want       kubernetes.YAMLFile
 		wantErr    bool
 	}{
 		{
@@ -253,9 +254,9 @@ metadata:
   name: foo
   namespace: bar
 `),
-			want: yamlFile{
-				filename: "service-foo.yaml",
-				meta: kubeObjectMeta{
+			want: kubernetes.YAMLFile{
+				Filename: "service-foo.yaml",
+				Meta: kubernetes.ObjectMeta{
 					APIVersion: "v1",
 					Kind:       "Service",
 					Name:       "foo",
@@ -271,9 +272,9 @@ kind: Service
 metadata:
   name: foo
 `),
-			want: yamlFile{
-				filename: "service-foo.yaml",
-				meta: kubeObjectMeta{
+			want: kubernetes.YAMLFile{
+				Filename: "service-foo.yaml",
+				Meta: kubernetes.ObjectMeta{
 					APIVersion: "v1",
 					Kind:       "Service",
 					Name:       "foo",
@@ -291,9 +292,9 @@ metadata:
   namespace: bar
 `),
 			strictKube: true,
-			want: yamlFile{
-				filename: "service-foo.yaml",
-				meta: kubeObjectMeta{
+			want: kubernetes.YAMLFile{
+				Filename: "service-foo.yaml",
+				Meta: kubernetes.ObjectMeta{
 					APIVersion: "v1",
 					Kind:       "Service",
 					Name:       "foo",
@@ -310,9 +311,9 @@ metadata:
   name: foo
 `),
 			strictKube: true,
-			want: yamlFile{
-				filename: "service-foo.yaml",
-				meta: kubeObjectMeta{
+			want: kubernetes.YAMLFile{
+				Filename: "service-foo.yaml",
+				Meta: kubernetes.ObjectMeta{
 					APIVersion: "v1",
 					Kind:       "Service",
 					Name:       "foo",
@@ -343,8 +344,15 @@ kind: Foo
 			t.Parallel()
 
 			s := &Split{
-				log:      nolog,
-				template: template.Must(template.New(DefaultTemplateName).Funcs(local.Functions).Parse(DefaultTemplateName)),
+				log: logger.NOOPLogger,
+				template: func() *template.Renderer {
+					tmpl, err := template.New(template.DefaultTemplateName)
+					if err != nil {
+						t.Fatalf("unable to create template: %s", err)
+					}
+
+					return tmpl
+				}(),
 			}
 			s.opts.StrictKubernetes = tt.strictKube
 
@@ -363,7 +371,7 @@ func TestSplit_parseYamlManifestAllowingEmpties(t *testing.T) {
 		skipEmptyKind bool
 		includeKind   string
 		includeName   string
-		want          yamlFile
+		want          kubernetes.YAMLFile
 		wantErr       bool
 	}{
 		{
@@ -374,9 +382,9 @@ kind: Foo
 metadata:
   name: bar
 `),
-			want: yamlFile{
-				filename: "foo-bar.yaml",
-				meta:     kubeObjectMeta{APIVersion: "v1", Kind: "Foo", Name: "bar"},
+			want: kubernetes.YAMLFile{
+				Filename: "foo-bar.yaml",
+				Meta:     kubernetes.ObjectMeta{APIVersion: "v1", Kind: "Foo", Name: "bar"},
 			},
 			includeKind:   "Foo",
 			skipEmptyName: false,
@@ -390,9 +398,9 @@ kind: ""
 metadata:
   name: bar
 `),
-			want: yamlFile{
-				filename: "-bar.yaml",
-				meta:     kubeObjectMeta{APIVersion: "v1", Kind: "", Name: "bar"},
+			want: kubernetes.YAMLFile{
+				Filename: "-bar.yaml",
+				Meta:     kubernetes.ObjectMeta{APIVersion: "v1", Kind: "", Name: "bar"},
 			},
 			includeName:   "bar",
 			skipEmptyName: false,
@@ -418,9 +426,9 @@ kind: Foo
 metadata:
   name: ""
 `),
-			want: yamlFile{
-				filename: "foo-.yaml",
-				meta:     kubeObjectMeta{APIVersion: "v1", Kind: "Foo", Name: ""},
+			want: kubernetes.YAMLFile{
+				Filename: "foo-.yaml",
+				Meta:     kubernetes.ObjectMeta{APIVersion: "v1", Kind: "Foo", Name: ""},
 			},
 			includeKind:   "Foo",
 			skipEmptyName: true,
@@ -444,8 +452,11 @@ kind: Foo
 			t.Parallel()
 
 			s := &Split{
-				log:      nolog,
-				template: template.Must(template.New(DefaultTemplateName).Funcs(local.Functions).Parse(DefaultTemplateName)),
+				log: logger.NOOPLogger,
+				template: func() *template.Renderer {
+					tmpl, _ := template.New(template.DefaultTemplateName)
+					return tmpl
+				}(),
 			}
 
 			if len(tt.includeKind) > 0 {

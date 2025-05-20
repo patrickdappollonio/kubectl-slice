@@ -2,23 +2,30 @@ package slice
 
 import (
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
-	"text/template"
 
-	local "github.com/patrickdappollonio/kubectl-slice/slice/template"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/kubernetes"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/logger"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/template"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExecute_processSingleFile(t *testing.T) {
+	type yamlFileOutputTest struct {
+		filename string
+		meta     kubernetes.ObjectMeta
+	}
+
 	tests := []struct {
 		name          string
 		fields        Options
 		fileInput     string
 		wantErr       bool
 		wantFilterErr bool
-		fileOutput    *yamlFile
+		fileOutput    *yamlFileOutputTest
 	}{
 		{
 			name:   "basic pod",
@@ -29,25 +36,23 @@ kind: Pod
 metadata:
   name: nginx-ingress
 `,
-			fileOutput: &yamlFile{
+			fileOutput: &yamlFileOutputTest{
 				filename: "pod-nginx-ingress.yaml",
-				meta: kubeObjectMeta{
+				meta: kubernetes.ObjectMeta{
 					APIVersion: "v1",
 					Kind:       "Pod",
 					Name:       "nginx-ingress",
 				},
 			},
 		},
-		// ----------------------------------------------------------------
 		{
 			name:      "empty file",
 			fields:    Options{},
 			fileInput: `---`,
-			fileOutput: &yamlFile{
+			fileOutput: &yamlFileOutputTest{
 				filename: "-.yaml",
 			},
 		},
-		// ----------------------------------------------------------------
 		{
 			name: "include kind",
 			fields: Options{
@@ -59,9 +64,9 @@ kind: Pod
 metadata:
   name: nginx-ingress
 `,
-			fileOutput: &yamlFile{
+			fileOutput: &yamlFileOutputTest{
 				filename: "pod-nginx-ingress.yaml",
-				meta: kubeObjectMeta{
+				meta: kubernetes.ObjectMeta{
 					APIVersion: "v1",
 					Kind:       "Pod",
 					Name:       "nginx-ingress",
@@ -79,16 +84,15 @@ kind: Pod
 metadata:
   name: nginx-ingress
 `,
-			fileOutput: &yamlFile{
+			fileOutput: &yamlFileOutputTest{
 				filename: "pod-nginx-ingress.yaml",
-				meta: kubeObjectMeta{
+				meta: kubernetes.ObjectMeta{
 					APIVersion: "v1",
 					Kind:       "Pod",
 					Name:       "nginx-ingress",
 				},
 			},
 		},
-		// ----------------------------------------------------------------
 		{
 			name: "non kubernetes files skipped using strict kubernetes",
 			fields: Options{
@@ -100,7 +104,6 @@ metadata:
 #
 `,
 		},
-		// ----------------------------------------------------------------
 		{
 			name:   "non kubernetes file",
 			fields: Options{},
@@ -109,18 +112,16 @@ metadata:
 # This is a comment
 #
 `,
-			fileOutput: &yamlFile{
+			fileOutput: &yamlFileOutputTest{
 				filename: "-.yaml",
 			},
 		},
-		// ----------------------------------------------------------------
 		{
 			name:   "file with only spaces",
 			fields: Options{},
 			fileInput: `
 `,
 		},
-		// ----------------------------------------------------------------
 		{
 			name: "skipping kind",
 			fields: Options{
@@ -133,7 +134,6 @@ metadata:
   name: foobar
 `,
 		},
-		// ----------------------------------------------------------------
 		{
 			name: "skipping name",
 			fields: Options{
@@ -146,14 +146,12 @@ metadata:
   name: foobar
 `,
 		},
-		// ----------------------------------------------------------------
 		{
 			name:      "invalid YAML",
 			fields:    Options{},
 			fileInput: `kind: "Namespace`,
 			wantErr:   true,
 		},
-		// ----------------------------------------------------------------
 		{
 			name:   "invalid YAML",
 			fields: Options{},
@@ -183,9 +181,16 @@ kind: "Namespace
 			t.Parallel()
 
 			s := &Split{
-				opts:      tt.fields,
-				log:       nolog,
-				template:  template.Must(template.New("split").Funcs(local.Functions).Parse(DefaultTemplateName)),
+				opts: tt.fields,
+				log:  log.New(io.Discard, "", 0),
+				template: func() *template.Renderer {
+					tmpl, err := template.New(template.DefaultTemplateName)
+					if err != nil {
+						t.Fatalf("unable to create template: %s", err)
+					}
+
+					return tmpl
+				}(),
 				fileCount: 1,
 			}
 
@@ -196,11 +201,11 @@ kind: "Namespace
 				require.Lenf(t, s.filesFound, 1, "expected 1 file from list, got %d", len(s.filesFound))
 
 				current := s.filesFound[0]
-				require.Equal(t, tt.fileOutput.filename, current.filename)
-				require.Equal(t, tt.fileOutput.meta.APIVersion, current.meta.APIVersion)
-				require.Equal(t, tt.fileOutput.meta.Kind, current.meta.Kind)
-				require.Equal(t, tt.fileOutput.meta.Name, current.meta.Name)
-				require.Equal(t, tt.fileOutput.meta.Namespace, current.meta.Namespace)
+				require.Equal(t, tt.fileOutput.filename, current.Filename)
+				require.Equal(t, tt.fileOutput.meta.APIVersion, current.Meta.APIVersion)
+				require.Equal(t, tt.fileOutput.meta.Kind, current.Meta.Kind)
+				require.Equal(t, tt.fileOutput.meta.Name, current.Meta.Name)
+				require.Equal(t, tt.fileOutput.meta.Namespace, current.Meta.Namespace)
 			} else {
 				require.Lenf(t, s.filesFound, 0, "expected 0 files from list, got %d", len(s.filesFound))
 			}
@@ -210,7 +215,7 @@ kind: "Namespace
 
 func TestExecute_writeToFileCases(t *testing.T) {
 	tempdir := t.TempDir()
-	s := &Split{log: nolog}
+	s := &Split{log: logger.NOOPLogger}
 
 	t.Run("write new file", func(tt *testing.T) {
 		t.Parallel()
@@ -321,7 +326,7 @@ metadata:
 			require.NoError(t, err, "error found while writing input file")
 
 			s, err := New(Options{
-				GoTemplate:        DefaultTemplateName,
+				GoTemplate:        template.DefaultTemplateName,
 				IncludeTripleDash: tt.includeDashes,
 				InputFile:         filepath.Join(tdinput, "input.yaml"),
 				OutputDirectory:   tdoutput,

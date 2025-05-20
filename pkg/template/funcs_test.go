@@ -1,10 +1,9 @@
 package template
 
 import (
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -13,8 +12,8 @@ func Test_mapValueByIndexEmpty(t *testing.T) {
 	tests := []struct {
 		name  string
 		index string
-		m     map[string]interface{}
-		want  interface{}
+		m     map[string]any
+		want  any
 	}{
 		{
 			name:  "nil map",
@@ -25,19 +24,19 @@ func Test_mapValueByIndexEmpty(t *testing.T) {
 		{
 			name:  "empty index",
 			index: "",
-			m:     map[string]interface{}{},
+			m:     map[string]any{},
 			want:  "",
 		},
 		{
 			name:  "key not found",
 			index: "foo",
-			m:     map[string]interface{}{"bar": "baz"},
+			m:     map[string]any{"bar": "baz"},
 			want:  "",
 		},
 		{
 			name:  "key found",
 			index: "foo",
-			m:     map[string]interface{}{"foo": "bar"},
+			m:     map[string]any{"foo": "bar"},
 			want:  "bar",
 		},
 	}
@@ -54,8 +53,8 @@ func Test_mapValueByIndex(t *testing.T) {
 	tests := []struct {
 		name    string
 		index   string
-		m       map[string]interface{}
-		want    interface{}
+		m       map[string]any
+		want    any
 		wantErr bool
 	}{
 		{
@@ -68,21 +67,21 @@ func Test_mapValueByIndex(t *testing.T) {
 		{
 			name:    "empty index",
 			index:   "",
-			m:       map[string]interface{}{},
+			m:       map[string]any{},
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "key not found",
 			index:   "foo",
-			m:       map[string]interface{}{"bar": "baz"},
+			m:       map[string]any{"bar": "baz"},
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "key found",
 			index:   "foo",
-			m:       map[string]interface{}{"foo": "bar"},
+			m:       map[string]any{"foo": "bar"},
 			want:    "bar",
 			wantErr: false,
 		},
@@ -239,12 +238,11 @@ func Test_toString(t *testing.T) {
 	require.Equal(t, "foo", toString([]byte("foo")))
 	require.Equal(t, "123", toString(123))
 	require.Equal(t, "", toString(nil))
-	
+
 	// Test error type
-	rand.Seed(time.Now().UnixNano())
 	errMsg := randomString(10)
 	require.Equal(t, errMsg, toString(errorString(errMsg)))
-	
+
 	// Test fmt.Stringer
 	stringerMsg := randomString(10)
 	require.Equal(t, stringerMsg, toString(stringStringer(stringerMsg)))
@@ -266,7 +264,7 @@ func randomString(n int) string {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+		b[i] = letterBytes[int(rand.Int32N(int32(len(letterBytes))))]
 	}
 	return string(b)
 }

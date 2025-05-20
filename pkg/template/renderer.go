@@ -32,10 +32,10 @@ func New(templateString string) (*Renderer, error) {
 }
 
 // Execute renders a template with the given data
-func (r *Renderer) Execute(data interface{}) (string, error) {
+func (r *Renderer) Execute(data any) (string, error) {
 	var buf bytes.Buffer
 	if err := r.tmpl.Execute(&buf, data); err != nil {
-		return "", ImproveExecError(err)
+		return "", improveExecError(err)
 	}
 
 	// Get the rendered filename
@@ -47,8 +47,10 @@ func (r *Renderer) Execute(data interface{}) (string, error) {
 	return name, nil
 }
 
-// ImproveExecError enhances template execution error messages
-func ImproveExecError(err error) error {
+// improveExecError enhances template execution error messages.
+// This uses string comparisons since the Go template engine does not return
+// typed error messages.
+func improveExecError(err error) error {
 	if strings.Contains(err.Error(), "can't evaluate field") {
 		return fmt.Errorf("%w (this usually means the field does not exist in the YAML)", err)
 	}

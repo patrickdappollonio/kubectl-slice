@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/patrickdappollonio/kubectl-slice/pkg/logger"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTemplate_compileTemplate(t *testing.T) {
@@ -38,7 +39,11 @@ func TestTemplate_compileTemplate(t *testing.T) {
 			s := &Split{opts: tt.opts, log: logger.NOOPLogger}
 
 			err := s.compileTemplate()
-			requireErrorIf(t, tt.wantErr, err)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }

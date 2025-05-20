@@ -354,7 +354,12 @@ kind: Foo
 			s.opts.StrictKubernetes = tt.strictKube
 
 			got, err := s.parseYAMLManifest(tt.contents)
-			requireErrorIf(t, tt.wantErr, err)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -472,7 +477,11 @@ kind: Foo
 			}
 
 			got, err := s.parseYAMLManifest(tt.contents)
-			requireErrorIf(t, tt.wantErr, err)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
 		})
 	}

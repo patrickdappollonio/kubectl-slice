@@ -6,6 +6,9 @@ import (
 	"github.com/patrickdappollonio/kubectl-slice/pkg/template"
 )
 
+// compileTemplate creates and caches a template renderer using the template string
+// from Options.GoTemplate. The method is idempotent - if a template is already compiled,
+// it will skip compilation and return nil.
 func (s *Split) compileTemplate() error {
 	if s.template != nil {
 		s.log.Println("Template already compiled, skipping")

@@ -240,8 +240,10 @@ func (s *Split) sort() {
 	}
 }
 
-// Execute runs the process according to the split.Options provided. This will
-// generate the files in the given directory.
+// Execute processes YAML files containing Kubernetes resources and splits them into
+// individual files according to the configured Options. It handles the complete workflow
+// from scanning input sources, filtering resources based on criteria, to saving the
+// resulting files in the specified output location.
 func (s *Split) Execute() error {
 	if err := s.scan(); err != nil {
 		return err

@@ -15,7 +15,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// GetTemplateFunctions returns a map of functions available for templates
+// GetTemplateFunctions returns a map of functions that can be used in Go templates.
+// These functions provide string manipulation, conversion, and other utilities
+// for customizing the output filenames during the slice operation.
 func GetTemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"pluralize":    Pluralize,
@@ -45,7 +47,8 @@ func GetTemplateFunctions() template.FuncMap {
 	}
 }
 
-// Pluralize adds an "s" to a string if n is not 1
+// Pluralize adds an "s" to the end of a string if n is not 1.
+// This is useful for generating grammatically correct output when dealing with counts.
 func Pluralize(s string, n int) string {
 	if n == 1 {
 		return s
@@ -89,17 +92,20 @@ func mapValueByIndex(index string, m map[string]interface{}) (interface{}, error
 	return v, nil
 }
 
-// jsonLower converts JSON keys to lowercase
+// jsonLower converts string input to lowercase. It handles various input types
+// by converting them to strings first.
 func jsonLower(s interface{}) string {
 	return strings.ToLower(toString(s))
 }
 
-// jsonUpper converts JSON keys to uppercase
+// jsonUpper converts string input to uppercase. It handles various input types
+// by converting them to strings first.
 func jsonUpper(s interface{}) string {
 	return strings.ToUpper(toString(s))
 }
 
-// jsonTitle converts JSON keys to title case
+// jsonTitle converts string input to title case. It handles various input types
+// by converting them to strings first, then applies proper title casing.
 func jsonTitle(s interface{}) string {
 	return cases.Title(language.Und).String(toString(s))
 }
@@ -186,7 +192,8 @@ func jsonAlphanumify(src interface{}) string {
 // alphanumDashRegex is a regular expression that matches alphanumeric characters and dashes
 var alphanumDashRegex = regexp.MustCompile(`[^a-zA-Z0-9-]+`)
 
-// jsonAlphanumdash returns alphanumeric characters and dashes
+// jsonAlphanumdash filters string input to contain only alphanumeric characters and dashes.
+// All other characters are removed from the string. Useful for generating safe filenames.
 func jsonAlphanumdash(src interface{}) string {
 	s := toString(src)
 	s = strings.ReplaceAll(s, "_", "-")

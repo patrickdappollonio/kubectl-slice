@@ -14,8 +14,8 @@ type ObjectMeta struct {
 }
 
 // GetGroupFromAPIVersion extracts the group from the APIVersion field
-func (objectMeta *ObjectMeta) GetGroupFromAPIVersion() string {
-	fields := strings.Split(objectMeta.APIVersion, "/")
+func (k *ObjectMeta) GetGroupFromAPIVersion() string {
+	fields := strings.Split(k.APIVersion, "/")
 	if len(fields) == 2 {
 		return strings.ToLower(fields[0])
 	}

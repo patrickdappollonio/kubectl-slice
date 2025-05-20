@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-// StrictModeSkipErr indicates a resource is being skipped in strict mode due to missing field
+// StrictModeSkipErr represents an error when a Kubernetes resource is skipped
+// in strict mode because a required field is missing or empty
 type StrictModeSkipErr struct {
 	FieldName string
 }
@@ -16,7 +17,8 @@ func (s *StrictModeSkipErr) Error() string {
 	)
 }
 
-// SkipErr indicates a resource is being skipped based on user configuration
+// SkipErr represents an error when a Kubernetes resource is intentionally skipped
+// based on user-provided include/exclude filter configuration
 type SkipErr struct {
 	Name string
 	Kind string
@@ -26,10 +28,12 @@ func (e *SkipErr) Error() string {
 	return fmt.Sprintf("resource %s %q is configured to be skipped", e.Kind, e.Name)
 }
 
-// NonK8sHelper is a constant message for non-Kubernetes YAML files
+// NonK8sHelper provides a standard error message for YAML files that don't contain
+// standard Kubernetes metadata and are likely not Kubernetes resources
 const NonK8sHelper = `the file has no Kubernetes metadata: it is most likely a non-Kubernetes YAML file, you can skip it with --skip-non-k8s`
 
-// CantFindFieldErr indicates a field is missing in a Kubernetes resource
+// CantFindFieldErr represents an error when a required field is missing in a Kubernetes
+// resource. It includes contextual information about the file and resource.
 type CantFindFieldErr struct {
 	FieldName string
 	FileCount int

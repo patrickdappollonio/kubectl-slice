@@ -4,7 +4,8 @@ import (
 	"sort"
 )
 
-// YAMLFile represents a Kubernetes YAML file with its metadata and content
+// YAMLFile represents a Kubernetes YAML file with associated metadata and content.
+// It's used throughout the application for storing and processing YAML resources.
 type YAMLFile struct {
 	Filename string
 	Meta     ObjectMeta

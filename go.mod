@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/mb0/glob v0.0.0-20160210091149-1eb79d2de6c4
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1

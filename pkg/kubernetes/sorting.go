@@ -1,39 +1,20 @@
-package slice
+package kubernetes
 
 import (
 	"sort"
-	"strings"
 )
 
-type yamlFile struct {
-	filename string
-	meta     kubeObjectMeta
-	data     []byte
+// YAMLFile represents a Kubernetes YAML file with associated metadata and content.
+// It's used throughout the application for storing and processing YAML resources.
+type YAMLFile struct {
+	Filename string
+	Meta     *ObjectMeta
+	Data     []byte
 }
 
-type kubeObjectMeta struct {
-	APIVersion string
-	Kind       string
-	Name       string
-	Namespace  string
-	Group      string
-}
-
-func (objectMeta *kubeObjectMeta) GetGroupFromAPIVersion() string {
-	fields := strings.Split(objectMeta.APIVersion, "/")
-	if len(fields) == 2 {
-		return strings.ToLower(fields[0])
-	}
-
-	return ""
-}
-
-func (k kubeObjectMeta) empty() bool {
-	return k.APIVersion == "" && k.Kind == "" && k.Name == "" && k.Namespace == ""
-}
-
+// HelmInstallOrder defines the order in which Kubernetes resources should be installed
 // from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#LL31-L67C2
-var helmInstallOrder = []string{
+var HelmInstallOrder = []string{
 	"Namespace",
 	"NetworkPolicy",
 	"ResourceQuota",
@@ -71,19 +52,24 @@ var helmInstallOrder = []string{
 	"APIService",
 }
 
-// from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#L113-L119
-func sortYAMLsByKind(manifests []yamlFile) []yamlFile {
+// SortByKind sorts a slice of YAMLFile according to Kubernetes resource kind ordering
+func SortByKind(manifests []YAMLFile) []YAMLFile {
 	sort.SliceStable(manifests, func(i, j int) bool {
-		return lessByKind(manifests[i], manifests[j], manifests[i].meta.Kind, manifests[j].meta.Kind, helmInstallOrder)
+		return lessByKind(
+			manifests[i].Meta.Kind,
+			manifests[j].Meta.Kind,
+			HelmInstallOrder,
+		)
 	})
 
 	return manifests
 }
 
+// lessByKind compares two kinds and determines their relative order
 // from: https://github.com/helm/helm/blob/v3.11.1/pkg/releaseutil/kind_sorter.go#L133-L158
-func lessByKind(_ interface{}, _ interface{}, kindA string, kindB string, o []string) bool {
-	ordering := make(map[string]int, len(o))
-	for v, k := range o {
+func lessByKind(kindA, kindB string, order []string) bool {
+	ordering := make(map[string]int, len(order))
+	for v, k := range order {
 		ordering[k] = v
 	}
 
@@ -91,7 +77,7 @@ func lessByKind(_ interface{}, _ interface{}, kindA string, kindB string, o []st
 	second, bok := ordering[kindB]
 
 	if !aok && !bok {
-		// if both are unknown then sort alphabetically by kind, keep original order if same kind
+		// if both are unknown then sort alphabetically by kind
 		if kindA != kindB {
 			return kindA < kindB
 		}

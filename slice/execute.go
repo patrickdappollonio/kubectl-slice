@@ -7,6 +7,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/patrickdappollonio/kubectl-slice/pkg/errors"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/files"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/kubernetes"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/template"
 )
 
 const (
@@ -37,11 +42,11 @@ func (s *Split) processSingleFile(file []byte) error {
 	meta, err := s.parseYAMLManifest(file)
 	if err != nil {
 		switch err.(type) {
-		case *skipErr:
+		case *errors.SkipErr:
 			s.log.Printf("Skipping file %d: %s", s.fileCount, err.Error())
 			return nil
 
-		case *strictModeSkipErr:
+		case *errors.StrictModeSkipErr:
 			s.log.Printf("Skipping file %d: %s", s.fileCount, err.Error())
 			return nil
 
@@ -51,29 +56,29 @@ func (s *Split) processSingleFile(file []byte) error {
 	}
 
 	existentData, position := []byte(nil), -1
-	for pos := 0; pos < len(s.filesFound); pos++ {
-		if s.filesFound[pos].filename == meta.filename {
-			existentData = s.filesFound[pos].data
+	for pos := range s.filesFound {
+		if s.filesFound[pos].Filename == meta.Filename {
+			existentData = s.filesFound[pos].Data
 			position = pos
 			break
 		}
 	}
 
 	if position == -1 {
-		s.log.Printf("Got nonexistent file. Adding it to the list: %s", meta.filename)
-		s.filesFound = append(s.filesFound, yamlFile{
-			filename: meta.filename,
-			meta:     meta.meta,
-			data:     file,
+		s.log.Printf("Got nonexistent file. Adding it to the list: %s", meta.Filename)
+		s.filesFound = append(s.filesFound, kubernetes.YAMLFile{
+			Filename: meta.Filename,
+			Meta:     meta.Meta,
+			Data:     file,
 		})
 	} else {
-		s.log.Printf("Got existent file. Appending to original buffer: %s", meta.filename)
+		s.log.Printf("Got existent file. Appending to original buffer: %s", meta.Filename)
 		existentData = append(existentData, []byte("\n---\n")...)
 		existentData = append(existentData, file...)
-		s.filesFound[position] = yamlFile{
-			filename: meta.filename,
-			meta:     meta.meta,
-			data:     existentData,
+		s.filesFound[position] = kubernetes.YAMLFile{
+			Filename: meta.Filename,
+			Meta:     meta.Meta,
+			Data:     existentData,
 		}
 	}
 
@@ -85,7 +90,7 @@ func (s *Split) scan() error {
 	// duplicated files, we need to store them somewhere to, later, save them
 	// to files
 	s.fileCount = 0
-	s.filesFound = make([]yamlFile, 0)
+	s.filesFound = make([]kubernetes.YAMLFile, 0)
 
 	// We can totally create a single decoder then decode using that, however,
 	// we want to maintain 1:1 exactly the same declaration as the YAML originally
@@ -159,7 +164,7 @@ func (s *Split) store() error {
 		// Check if the directory exists and if it does, prune it
 		if _, err := os.Stat(s.opts.OutputDirectory); !os.IsNotExist(err) {
 			s.log.Printf("Pruning output directory %q", s.opts.OutputDirectory)
-			if err := deleteFolderContents(s.opts.OutputDirectory); err != nil {
+			if err := files.DeleteFolderContents(s.opts.OutputDirectory); err != nil {
 				return fmt.Errorf("unable to prune output directory %q: %w", s.opts.OutputDirectory, err)
 			}
 			s.log.Printf("Output directory %q pruned", s.opts.OutputDirectory)
@@ -172,8 +177,8 @@ func (s *Split) store() error {
 	for _, v := range s.filesFound {
 		s.fileCount++
 
-		fullpath := filepath.Join(s.opts.OutputDirectory, v.filename)
-		fileLength := len(v.data)
+		fullpath := filepath.Join(s.opts.OutputDirectory, v.Filename)
+		fileLength := len(v.Data)
 
 		s.log.Printf("Handling file %q: %d bytes long.", fullpath, fileLength)
 
@@ -191,18 +196,18 @@ func (s *Split) store() error {
 				s.WriteStdout("# File: %s (%d bytes)", fullpath, fileLength)
 			}
 
-			s.WriteStdout("%s", v.data)
+			s.WriteStdout("%s", v.Data)
 			continue
 
 		default:
-			local := make([]byte, 0, len(v.data)+4)
+			local := make([]byte, 0, len(v.Data)+4)
 
 			// If the user wants to include the triple dash, add it
 			// at the beginning of the file
-			if s.opts.IncludeTripleDash && !bytes.Equal(v.data, []byte("---")) {
-				local = append([]byte("---\n"), v.data...)
+			if s.opts.IncludeTripleDash && !bytes.Equal(v.Data, []byte("---")) {
+				local = append([]byte("---\n"), v.Data...)
 			} else {
-				local = append(local, v.data...)
+				local = append(local, v.Data...)
 			}
 
 			// do nothing, handling below
@@ -217,13 +222,13 @@ func (s *Split) store() error {
 
 	switch {
 	case s.opts.DryRun:
-		s.WriteStderr("%d %s generated (dry-run)", s.fileCount, pluralize("file", s.fileCount))
+		s.WriteStderr("%d %s generated (dry-run)", s.fileCount, template.Pluralize("file", s.fileCount))
 
 	case s.opts.OutputToStdout:
-		s.WriteStderr("%d %s parsed to stdout.", s.fileCount, pluralize("file", s.fileCount))
+		s.WriteStderr("%d %s parsed to stdout.", s.fileCount, template.Pluralize("file", s.fileCount))
 
 	default:
-		s.WriteStderr("%d %s generated.", s.fileCount, pluralize("file", s.fileCount))
+		s.WriteStderr("%d %s generated.", s.fileCount, template.Pluralize("file", s.fileCount))
 	}
 
 	return nil
@@ -231,12 +236,14 @@ func (s *Split) store() error {
 
 func (s *Split) sort() {
 	if s.opts.SortByKind {
-		s.filesFound = sortYAMLsByKind(s.filesFound)
+		s.filesFound = kubernetes.SortByKind(s.filesFound)
 	}
 }
 
-// Execute runs the process according to the split.Options provided. This will
-// generate the files in the given directory.
+// Execute processes YAML files containing Kubernetes resources and splits them into
+// individual files according to the configured Options. It handles the complete workflow
+// from scanning input sources, filtering resources based on criteria, to saving the
+// resulting files in the specified output location.
 func (s *Split) Execute() error {
 	if err := s.scan(); err != nil {
 		return err
@@ -251,7 +258,7 @@ func (s *Split) writeToFile(path string, data []byte) error {
 	// Since a single Go Template File Name might render different folder prefixes,
 	// we need to ensure they're all created.
 	if err := os.MkdirAll(filepath.Dir(path), folderChmod); err != nil {
-		return fmt.Errorf("unable to create output folder for file %q: %w", path, err)
+		return fmt.Errorf("unable to create directory for file %q: %w", path, err)
 	}
 
 	// Open the file as read/write, create the file if it doesn't exist, and if

@@ -7,16 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/patrickdappollonio/kubectl-slice/pkg/logger"
+	"github.com/patrickdappollonio/kubectl-slice/pkg/template"
 	"github.com/stretchr/testify/require"
 )
-
-type noopLogger struct{}
-
-func (noopLogger) Println(...interface{})            {}
-func (noopLogger) SetOutput(_ io.Writer)             {}
-func (noopLogger) Printf(_ string, _ ...interface{}) {}
-
-var nolog = &noopLogger{}
 
 func TestEndToEnd(t *testing.T) {
 	cases := []struct {
@@ -28,7 +22,7 @@ func TestEndToEnd(t *testing.T) {
 		{
 			name:      "end to end",
 			inputFile: "full.yaml",
-			template:  DefaultTemplateName,
+			template:  template.DefaultTemplateName,
 			expectedFiles: []string{
 				"full/-.yaml",
 				"full/deployment-hello-docker.yaml",
@@ -66,7 +60,7 @@ func TestEndToEnd(t *testing.T) {
 			require.NoError(tt, err, "not expecting an error")
 			require.NoError(tt, slice.Execute(), "not expecting an error on Execute()")
 
-			slice.log = nolog
+			slice.log = logger.NOOPLogger
 
 			files, err := os.ReadDir(dir)
 			require.NoError(tt, err, "not expecting an error on ReadDir()")

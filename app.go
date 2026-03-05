@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/patrickdappollonio/kubectl-slice/pkg/template"
 	"github.com/patrickdappollonio/kubectl-slice/slice"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -101,7 +102,7 @@ func root() *cobra.Command {
 	rootCommand.Flags().StringSliceVar(&opts.InputFolderExt, "extensions", []string{".yaml", ".yml"}, "the extensions to look for in the input folder")
 	rootCommand.Flags().BoolVarP(&opts.Recurse, "recurse", "r", false, "if true, the input folder will be read recursively (has no effect unless used with --input-folder)")
 	rootCommand.Flags().StringVarP(&opts.OutputDirectory, "output-dir", "o", "", "the output directory used to output the splitted files")
-	rootCommand.Flags().StringVarP(&opts.GoTemplate, "template", "t", slice.DefaultTemplateName, "go template used to generate the file name when creating the resource files in the output directory")
+	rootCommand.Flags().StringVarP(&opts.GoTemplate, "template", "t", template.DefaultTemplateName, "go template used to generate the file name when creating the resource files in the output directory")
 	rootCommand.Flags().BoolVar(&opts.DryRun, "dry-run", false, "if true, no files are created, but the potentially generated files will be printed as the command output")
 	rootCommand.Flags().BoolVar(&opts.DebugMode, "debug", false, "enable debug mode")
 	rootCommand.Flags().BoolVarP(&opts.Quiet, "quiet", "q", false, "if true, no output is written to stdout/err")

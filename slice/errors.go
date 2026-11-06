@@ -35,18 +35,18 @@ type cantFindFieldErr struct {
 func (e *cantFindFieldErr) Error() string {
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&sb,
 		"unable to find Kubernetes %q field in file %d",
 		e.fieldName, e.fileCount,
-	))
+	)
 
 	if e.meta.empty() {
 		sb.WriteString(": " + nonK8sHelper)
 	} else {
-		sb.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&sb,
 			": processed details: kind %q, name %q, apiVersion %q",
 			e.meta.Kind, e.meta.Name, e.meta.APIVersion,
-		))
+		)
 	}
 
 	return sb.String()

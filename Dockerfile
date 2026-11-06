@@ -1,5 +1,5 @@
-ARG KUBECTL_VERSION=1.31.1
-ARG YQ_VERSION=v4.44.3
+ARG KUBECTL_VERSION=1.37.2
+ARG YQ_VERSION=v4.54.1
 
 # Stage 1: Download binaries
 FROM debian:12-slim as download_binary

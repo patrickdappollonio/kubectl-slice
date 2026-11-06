@@ -37,7 +37,7 @@ var examples = []string{
 func generateExamples([]string) string {
 	var s bytes.Buffer
 	for pos, v := range examples {
-		s.WriteString(fmt.Sprintf("  %s", v))
+		fmt.Fprintf(&s, "  %s", v)
 
 		if pos != len(examples)-1 {
 			s.WriteString("\n")
@@ -80,9 +80,9 @@ func root() *cobra.Command {
 				// setting the flags correctly will see this message.
 				if !opts.Quiet {
 					if fi, err := os.Stdin.Stat(); err == nil && fi.Mode()&os.ModeNamedPipe == 0 {
-						fmt.Fprintln(opts.Stderr, "Receiving data from the terminal. Press CTRL+D when you're done typing or CTRL+C")
-						fmt.Fprintln(opts.Stderr, "to exit without processing the content. If you're seeing this by mistake, make")
-						fmt.Fprintln(opts.Stderr, "sure the command line flags, environment variables or config file are correct.")
+						_, _ = fmt.Fprintln(opts.Stderr, "Receiving data from the terminal. Press CTRL+D when you're done typing or CTRL+C")
+						_, _ = fmt.Fprintln(opts.Stderr, "to exit without processing the content. If you're seeing this by mistake, make")
+						_, _ = fmt.Fprintln(opts.Stderr, "sure the command line flags, environment variables or config file are correct.")
 					}
 				}
 			}

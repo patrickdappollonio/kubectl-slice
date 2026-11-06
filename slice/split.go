@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"text/template"
+
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 const DefaultTemplateName = "{{.kind | lower}}-{{.metadata.name}}.yaml"
@@ -26,6 +28,7 @@ type Split struct {
 	log      Logger
 	template *template.Template
 	data     *bytes.Buffer
+	selector labels.Selector // nil when no selector was given
 
 	filesFound []yamlFile
 	fileCount  int
@@ -92,4 +95,8 @@ type Options struct {
 
 	IncludedGroups []string
 	ExcludedGroups []string
+
+	// Selector is a Kubernetes label selector, as used by "kubectl get -l".
+	// Only resources whose metadata.labels match it are kept.
+	Selector string
 }

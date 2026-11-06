@@ -95,35 +95,40 @@ Examples:
   kubectl-slice -f foo.yaml --exclude-name *-svc --stdout
   kubectl-slice -f foo.yaml --include Pod/* --stdout
   kubectl-slice -f foo.yaml --exclude deployment/kube* --stdout
+  kubectl-slice -f foo.yaml -l 'app=web,env in (prod,staging)' --stdout
   kubectl-slice -d ./ --recurse -o ./ --include-kind Pod,Namespace
   kubectl-slice -d ./ --recurse --stdout --include Pod/*
   kubectl-slice --config config.yaml
 
 Flags:
-      --allow-empty-kinds      if enabled, resources with empty kinds don't produce an error when filtering
-      --allow-empty-names      if enabled, resources with empty names don't produce an error when filtering
-  -c, --config string          path to the config file
-      --dry-run                if true, no files are created, but the potentially generated files will be printed as the command output
-      --exclude strings        resource name to exclude in the output (format <kind>/<name>, case insensitive, glob supported)
-      --exclude-kind strings   resource kind to exclude in the output (singular, case insensitive, glob supported)
-      --exclude-name strings   resource name to exclude in the output (singular, case insensitive, glob supported)
-      --extensions strings     the extensions to look for in the input folder (default [.yaml,.yml])
-  -h, --help                   help for kubectl-slice
-      --include strings        resource name to include in the output (format <kind>/<name>, case insensitive, glob supported)
-      --include-kind strings   resource kind to include in the output (singular, case insensitive, glob supported)
-      --include-name strings   resource name to include in the output (singular, case insensitive, glob supported)
-      --include-triple-dash    if enabled, the typical "---" YAML separator is included at the beginning of resources sliced
-  -f, --input-file string      the input file used to read the initial macro YAML file; if empty or "-", stdin is used (exclusive with --input-folder)
-  -d, --input-folder string    the input folder used to read the initial macro YAML files (exclusive with --input-file)
-  -o, --output-dir string      the output directory used to output the splitted files
-      --prune                  if enabled, the output directory will be pruned before writing the files
-  -q, --quiet                  if true, no output is written to stdout/err
-  -r, --recurse                if true, the input folder will be read recursively (has no effect unless used with --input-folder)
-  -s, --skip-non-k8s           if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
-      --sort-by-kind           if enabled, resources are sorted by Kind, a la Helm, before saving them to disk
-      --stdout                 if enabled, no resource is written to disk and all resources are printed to stdout instead
-  -t, --template string        go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
-  -v, --version                version for kubectl-slice
+      --allow-empty-kinds       if enabled, resources with empty kinds don't produce an error when filtering
+      --allow-empty-names       if enabled, resources with empty names don't produce an error when filtering
+  -c, --config string           path to the config file
+      --dry-run                 if true, no files are created, but the potentially generated files will be printed as the command output
+      --exclude strings         resource name to exclude in the output (format <kind>/<name>, case insensitive, glob supported)
+      --exclude-group strings   resource kind to exclude in the output (singular, case insensitive, glob supported)
+      --exclude-kind strings    resource kind to exclude in the output (singular, case insensitive, glob supported)
+      --exclude-name strings    resource name to exclude in the output (singular, case insensitive, glob supported)
+      --extensions strings      the extensions to look for in the input folder (default [.yaml,.yml])
+  -h, --help                    help for kubectl-slice
+      --include strings         resource name to include in the output (format <kind>/<name>, case insensitive, glob supported)
+      --include-group strings   resource kind to include in the output (singular, case insensitive, glob supported)
+      --include-kind strings    resource kind to include in the output (singular, case insensitive, glob supported)
+      --include-name strings    resource name to include in the output (singular, case insensitive, glob supported)
+      --include-triple-dash     if enabled, the typical "---" YAML separator is included at the beginning of resources sliced
+  -f, --input-file string       the input file used to read the initial macro YAML file; if empty or "-", stdin is used (exclusive with --input-folder)
+  -d, --input-folder string     the input folder used to read the initial macro YAML files (exclusive with --input-file)
+  -o, --output-dir string       the output directory used to output the splitted files
+      --prune                   if enabled, the output directory will be pruned before writing the files
+  -q, --quiet                   if true, no output is written to stdout/err
+  -r, --recurse                 if true, the input folder will be read recursively (has no effect unless used with --input-folder)
+      --remove-comments         if enabled, comments generated by the app are removed from the sliced files (but keep comments from the original file)
+  -l, --selector string         label selector to filter resources by, using the same syntax as "kubectl get -l" (e.g. "app=web,env in (prod,staging)")
+  -s, --skip-non-k8s            if enabled, any YAMLs that don't contain at least an "apiVersion", "kind" and "metadata.name" will be excluded from the split
+      --sort-by-kind            if enabled, resources are sorted by Kind, a la Helm, before saving them to disk
+      --stdout                  if enabled, no resource is written to disk and all resources are printed to stdout instead
+  -t, --template string         go template used to generate the file name when creating the resource files in the output directory (default "{{.kind | lower}}-{{.metadata.name}}.yaml")
+  -v, --version                 version for kubectl-slice
 ```
 
 ## Why `kubectl-slice`?

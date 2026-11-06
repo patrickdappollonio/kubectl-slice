@@ -2,12 +2,14 @@ package slice
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/mb0/glob"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // parseYAMLManifest parses a single YAML file as received by contents. It also renders the
@@ -93,6 +95,21 @@ func (s *Split) parseYAMLManifest(contents []byte) (yamlFile, error) {
 
 		if err := checkGroup(k8smeta, groups, len(s.opts.IncludedGroups) > 0); err != nil {
 			return yamlFile{}, &skipErr{}
+		}
+	}
+
+	if s.selector != nil {
+		resourceLabels, err := readLabels(contents, s.opts.StrictKubernetes)
+		if err != nil {
+			var labelErr *labelValueErr
+			if s.opts.StrictKubernetes && errors.As(err, &labelErr) {
+				return yamlFile{}, &strictModeSkipErr{fieldName: "metadata.labels." + labelErr.key}
+			}
+			return yamlFile{}, fmt.Errorf("unable to match label selector on YAML file number %d: %w", s.fileCount, err)
+		}
+
+		if !s.selector.Matches(labels.Set(resourceLabels)) {
+			return yamlFile{}, &skipErr{kind: "kind/name", name: fmt.Sprintf("%s/%s", k8smeta.Kind, k8smeta.Name)}
 		}
 	}
 

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"strings"
+
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 var (
@@ -136,6 +139,14 @@ func (s *Split) validateFilters() error {
 		if !regKN.MatchString(excluded) {
 			return fmt.Errorf("invalid excluded pattern %q should be <kind>/<name>", excluded)
 		}
+	}
+
+	if strings.TrimSpace(s.opts.Selector) != "" {
+		selector, err := labels.Parse(s.opts.Selector)
+		if err != nil {
+			return fmt.Errorf("invalid label selector %q: %w", s.opts.Selector, err)
+		}
+		s.selector = selector
 	}
 
 	return nil

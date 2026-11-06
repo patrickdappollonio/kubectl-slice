@@ -262,7 +262,7 @@ func (s *Split) writeToFile(path string, data []byte) error {
 		return fmt.Errorf("unable to create/open file %q: %w", path, err)
 	}
 
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Check if the last character is a newline, and if not, add one
 	if !bytes.HasSuffix(data, []byte{'\n'}) {

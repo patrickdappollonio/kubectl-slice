@@ -2,7 +2,6 @@ package template
 
 import (
 	"math/rand"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -378,8 +377,7 @@ func Test_env(t *testing.T) {
 
 			for k, v := range tt.args.env {
 				key := strings.ToUpper(prefix + k)
-				os.Setenv(key, v)
-				defer os.Unsetenv(key)
+				t.Setenv(key, v)
 			}
 
 			require.Equal(t, tt.want, env(prefix+tt.args.key))

@@ -73,7 +73,7 @@ func loadfile(fp string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, f); err != nil {
@@ -104,7 +104,7 @@ func deleteFolderContents(location string) error {
 	if err != nil {
 		return fmt.Errorf("unable to open folder %q: %s", location, err.Error())
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	names, err := f.Readdirnames(-1)
 	if err != nil {
